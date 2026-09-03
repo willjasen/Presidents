@@ -1,0 +1,26 @@
+[build]
+  command = "npm run build"
+  publish = "dist"
+
+[build.environment]
+  NODE_VERSION = "22"
+
+# Passkeys are bound to an exact relying-party hostname and HTTPS origin.
+# Keep these production-only so Netlify deploy previews can derive their own
+# temporary hostname from the incoming request.
+[context.production.environment]
+  WEBAUTHN_RP_ID = "dt-is-scum.willjasen.com"
+  WEBAUTHN_ORIGIN = "https://dt-is-scum.willjasen.com"
+  WEBAUTHN_RP_NAME = "Presidents"
+
+[functions]
+  directory = "netlify/functions"
+  node_bundler = "esbuild"
+
+[[headers]]
+  for = "/*"
+  [headers.values]
+    X-Frame-Options = "DENY"
+    X-Content-Type-Options = "nosniff"
+    Referrer-Policy = "strict-origin-when-cross-origin"
+    Permissions-Policy = "publickey-credentials-create=(self), publickey-credentials-get=(self)"

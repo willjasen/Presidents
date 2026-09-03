@@ -1,11 +1,11 @@
 package PresidentsClient;
 
 import java.io.IOException;
-import java.io.ObjectInputStream;
 //import java.io.ObjectOutputStream;
 import java.net.Socket;
 
 import PresidentsData.ChatData;
+import javax.swing.SwingUtilities;
 
 
 public class ClientChatThread implements Runnable {
@@ -17,14 +17,21 @@ public class ClientChatThread implements Runnable {
 	
 	private Client clientInstance;
 	private Socket clientChatSock;
+	private ClientNetwork network;
 	
 	public ClientChatThread() {
 		
 	}
 	
 	public ClientChatThread(Socket clientChatSock, Client clientInstance) {
+		this(clientChatSock, clientInstance, null);
+	}
+
+	public ClientChatThread(Socket clientChatSock, Client clientInstance,
+			ClientNetwork network) {
 		this.clientChatSock = clientChatSock;
 		this.clientInstance = clientInstance;
+		this.network = network;
 	}
 	
 	public Client getClientInstance() {
@@ -39,7 +46,8 @@ public class ClientChatThread implements Runnable {
 		// while the connection isn't closed and there is data, process
 		// it and send info to client
 		while (!clientChatSock.isClosed() && (dataInput = getData()) != null) {
-			clientInstance.handleReceivedChatData(dataInput);
+			ChatData received = dataInput;
+			SwingUtilities.invokeLater(() -> clientInstance.handleReceivedChatData(received));
 		}
 		
 		try {
@@ -51,30 +59,6 @@ public class ClientChatThread implements Runnable {
 	}
 	
 	public ChatData getData() {
-		ChatData data = null;
-		ObjectInputStream inFromClient = null;
-
-		if (!clientChatSock.isClosed()) {
-			try {
-				// Get reader for the socket, and then read a line from
-				// the socket
-				inFromClient = new ObjectInputStream(clientChatSock.getInputStream());
-				try {
-					data = (ChatData) inFromClient.readObject();
-				} catch (Exception e) {
-					System.out.println("Error reading from a chat socket.");
-					//serverInstance.writeOutput("Error reading from a chat socket.",ERROR_LOG);
-					//serverInstance.removePlayer(clientChatSock);
-				}
-			} catch (Exception e) {
-				//serverInstance.writeOutput("Error reading from a chat socket 2.",ERROR_LOG);
-				//serverInstance.removePlayer(clientChatSock);
-			}
-		} else {
-			// remove the player
-			//serverInstance.removePlayer(clientChatSock);
-		}
-
-		return data;
+		return network == null ? null : network.getChatData();
 	}
 }

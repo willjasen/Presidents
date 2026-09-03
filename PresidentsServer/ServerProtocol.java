@@ -2,11 +2,12 @@ package PresidentsServer;
 
 import java.net.Socket;
 import java.util.ArrayList;
-import java.util.Random;
+import java.util.UUID;
 
 import PresidentsData.CommandData;
 import PresidentsData.Data;
-import PresidentsData.MD5;
+import PresidentsData.GameActionData;
+import PresidentsData.GameStateData;
 import PresidentsData.RegisterUserData;
 import PresidentsData.RoomData;
 import PresidentsData.UserCommandData;
@@ -14,8 +15,6 @@ import PresidentsData.UserData;
 import PresidentsPlayer.Card;
 import PresidentsPlayer.Hand;
 import PresidentsPlayer.Player;
-
-import com.mysql.jdbc.exceptions.MySQLIntegrityConstraintViolationException;
 
 /**
  * 
@@ -46,6 +45,7 @@ public class ServerProtocol {
 	private ServerGameProtocol sgp;
 	private String username;
 	private String loginToken;
+	private String roomName;
 
 	public ServerProtocol() {
 
@@ -96,7 +96,6 @@ public class ServerProtocol {
 		if (((CommandData) dataOutput).getSubCommand().equals("OKLOGIN")) {
 			serverInstance.logOutput("Login successful for " + username,
 					LOGIN_LOG);
-			serverInstance.addPlayerToLobby(username);
 			ArrayList<String> players = getLobbyPlayers();
 			dataOutput.setPlayers(players);
 			state++;
@@ -117,12 +116,13 @@ public class ServerProtocol {
 		String username = dataInput.getUsername();
 		String nextRoom = dataInput.getNextRoom();
 
-		if (verifyLoginToken(dataInput)) {
-			serverInstance.movePlayer(username, "Lobby", nextRoom);
+		if (verifyLoginToken(dataInput)
+				&& serverInstance.movePlayer(username, "Lobby", nextRoom)) {
 			sgp = serverInstance.getGameProtocol(nextRoom);
+			roomName = nextRoom;
 			dataOutput = new CommandData("ENTERROOM_OK",dataInput.getNextRoom());
 			state++;
-		}
+		} else dataOutput = new CommandData("ENTERROOM_NO", nextRoom);
 		return dataOutput;
 	}
 
@@ -132,16 +132,18 @@ public class ServerProtocol {
 		String username = dataInput.getUsername();
 		String nextRoom = dataInput.getNextRoom();
 
-		if (verifyLoginToken(dataInput)) {
-			serverInstance.addRoom(nextRoom);
+		if (verifyLoginToken(dataInput) && serverInstance.addRoom(nextRoom)) {
 			serverInstance.logOutput("Room '" + nextRoom
 					+ "' has been created.", 1);
 
-			serverInstance.movePlayer(username, "Lobby", nextRoom);
+			if (!serverInstance.movePlayer(username, "Lobby", nextRoom)) {
+				return new CommandData("ENTERROOM_NO", nextRoom);
+			}
 			sgp = serverInstance.getGameProtocol(nextRoom);
+			roomName = nextRoom;
 			dataOutput = new CommandData("ENTERROOM_OK",dataInput.getNextRoom());
 			state++;
-		}
+		} else dataOutput = new CommandData("CREATE_ROOM_NO", nextRoom);
 		return dataOutput;
 	}
 
@@ -197,9 +199,21 @@ public class ServerProtocol {
 		}
 
 		else if (state == INROOM) {
-			if(dataInput instanceof UserCommandData) {
-				UserCommandData dataInRoom = (UserCommandData) dataInput;
-				dataOutput = sgp.processInput(dataInRoom,username);
+			if (dataInput instanceof GameActionData) {
+				GameActionData action = (GameActionData) dataInput;
+				if (!verifyLoginToken(action)) {
+					return sgp.snapshotFor(username, "Your login session is no longer valid");
+				}
+				try {
+					sgp.process(action, username);
+					if (GameActionData.GET_STATE.equals(action.getCommand())) {
+						dataOutput = sgp.snapshotFor(username, null);
+					} else {
+						serverInstance.broadcastGameState(roomName, sgp);
+					}
+				} catch (IllegalArgumentException | IllegalStateException e) {
+					dataOutput = sgp.snapshotFor(username, e.getMessage());
+				}
 			}
 		}
 		/*
@@ -241,9 +255,7 @@ public class ServerProtocol {
 	 * @return whether or not the token matches the token held by the server
 	 */
 	private boolean verifyLoginToken(UserCommandData commandData) {
-		if (commandData.getLoginToken().equals(loginToken))
-			return true;
-		return false;
+		return loginToken != null && loginToken.equals(commandData.getLoginToken());
 	}
 
 	private Data register(RegisterUserData dataInput) {
@@ -255,39 +267,28 @@ public class ServerProtocol {
 		String lastName = dataInput.getLastName();
 		String birthday = dataInput.getBirthday();
 
-		int row = -1;
+		boolean registered = sqlconn.register(dataInput);
 		try {
-			row = sqlconn.update("INSERT INTO player VALUES ('" + username
-					+ "','" + password + "','" + email + "','" + firstName
-					+ "','" + lastName + "','" + birthday
-					+ "',0,'user',0,0,0,0)");
-		} catch (MySQLIntegrityConstraintViolationException e) {
-			state = REGISTERING;
-			row = -1;
-		} catch (Exception e) {
-			state = REGISTERING;
-			row = -1;
-		} finally {
-			if (row >= 0) {
+			if (registered) {
 				dataOutput = new CommandData("REGISTER", "REGISTER_OK");
 				state++;
 				serverInstance.logOutput("New user " + username
 						+ " has been created.", LOGIN_LOG);
 			} else {
 				serverInstance.logOutput("Account " + username
-						+ "could not be created.", ERROR_LOG);
+						+ " could not be created.", ERROR_LOG);
 				dataOutput = new CommandData("REGISTER", "REGISTER_NO");
 			}
+		} catch (RuntimeException e) {
+			state = REGISTERING;
+			dataOutput = new CommandData("REGISTER", "REGISTER_NO");
 		}
 
 		return dataOutput;
 	}
 
 	private CommandData addNamedPlayer(String username) {
-
-		Random randGen = new Random();
-		String random = new Long(randGen.nextLong()).toString();
-		loginToken = MD5.getHash(random);
+		loginToken = UUID.randomUUID().toString();
 
 		Socket threadSocket = serverThread.getGameSocket();
 		serverInstance.addNameToPlayer(threadSocket, username, loginToken);
@@ -311,7 +312,7 @@ public class ServerProtocol {
 		} else
 			dataOutput = new CommandData("LOGIN", "NOLOGIN");
 
-		if (username.equals(null) || password.equals(null)) {
+		if (username == null || password == null) {
 			dataOutput = new CommandData("LOGIN", "NOLOGIN");
 		} else if (sqlconn.loginAuthorized(username, password)) {
 			dataOutput = addNamedPlayer(username);
@@ -319,5 +320,9 @@ public class ServerProtocol {
 			dataOutput = new CommandData("LOGIN", "NOLOGIN");
 
 		return dataOutput;
+	}
+
+	public void close() {
+		if (sqlconn != null) sqlconn.close();
 	}
 }

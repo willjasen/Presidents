@@ -22,11 +22,11 @@ public class RoomData extends Data {
 	public RoomData() {
 		hand = new Hand();
 		playerNames = new ArrayList<String>(0);
-		createRandomHand();
 	}
 	
 	public RoomData(Hand hand) {
 		this.hand = hand;
+		this.playerNames = new ArrayList<String>(0);
 	}
 	
 	public Hand getHand() {
@@ -43,14 +43,6 @@ public class RoomData extends Data {
 	
 	public ArrayList<String> getPlayerNames() {
 		return playerNames;
-	}
-	
-	public void createRandomHand() {
-		for (int i = 1; i <= 13; i++) {
-			for (int j = 0; j < 1; j++) {
-				hand.addCard(new Card(i, j));
-			}
-		}
 	}
 	
 }

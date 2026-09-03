@@ -2,13 +2,14 @@ package PresidentsServer;
 
 import java.net.*;
 import java.util.ArrayList;
+import java.util.HashMap;
+import java.util.Map;
 import java.io.*;
 
-import PresidentsClient.ClientChatThread;
 import PresidentsData.ChatData;
+import PresidentsData.GameStateData;
 import PresidentsPlayer.Human;
 import PresidentsPlayer.Player;
-import PresidentsPlayer.Players;
 
 /**
  * 
@@ -18,9 +19,9 @@ import PresidentsPlayer.Players;
 public class Server {
 
 	/** Port that the game runs on. */
-	private static final int SERVER_PORT = 3000;
+	private static final int DEFAULT_SERVER_PORT = 3000;
 	/** Port that the chat service runs on. */
-	private static final int CHATROOM_PORT = 3001;
+	private static final int DEFAULT_CHATROOM_PORT = 3001;
 
 	// constants that are used to determine which log to write to
 	private static final int ERROR_LOG = 0;
@@ -30,7 +31,7 @@ public class Server {
 	/**
 	 * Running state of the server.
 	 */
-	private static boolean serverRunning = true;
+	private volatile boolean serverRunning = false;
 
 	// create logs
 	private static final ServerLog errorLog = new ServerLog();
@@ -41,6 +42,8 @@ public class Server {
 	 * GUI associated with the server.
 	 */
 	private ServerGUI gui;
+	private final int configuredServerPort;
+	private final int configuredChatPort;
 
 	/**
 	 * A list of players who are connected to the server, but have not logged
@@ -50,38 +53,46 @@ public class Server {
 
 	/** List of current game rooms. */
 	private GameRooms gameRooms;
+	private final Map<Socket, ServerThread> gameClients = new HashMap<Socket, ServerThread>();
 
 	/** Socket for the game service. */
 	private ServerSocket servSock;
 	/** Socket for the chat service. */
 	private ServerSocket chatSock;
 
-	private Server() {
-		// add rooms just to test
+	public Server() {
+		this(null, Integer.getInteger("presidents.server.port", DEFAULT_SERVER_PORT),
+				Integer.getInteger("presidents.chat.port", DEFAULT_CHATROOM_PORT));
+	}
+
+	Server(ServerGUI gui, int serverPort, int chatPort) {
 		gameRooms = new GameRooms();
 		gameRooms.createRoom("Lobby");
-		gameRooms.createRoom("room 1");
-		gameRooms.createRoom("this is room 2.");
-		gameRooms.createRoom("ROOM 3!!!");
+		this.gui = gui;
+		this.configuredServerPort = serverPort;
+		this.configuredChatPort = chatPort;
 	}
 
 	public Server(ServerGUI gui) {
-		this();
-		this.gui = gui;
-
-		// startServer();
+		this(gui, Integer.getInteger("presidents.server.port", DEFAULT_SERVER_PORT),
+				Integer.getInteger("presidents.chat.port", DEFAULT_CHATROOM_PORT));
 	}
 
 	/**
 	 * Sends chat messages to every client in a particular room, specified in
 	 * dataInput.
 	 */
-	public void handleReceivedChatData(ChatData dataInput) {
-		String roomName = dataInput.getRoomName();
+	public void handleReceivedChatData(Human sender, ChatData dataInput) {
+		if (sender == null || sender.getUsername() == null || sender.getRoomName() == null) return;
+		String roomName = sender.getRoomName();
 		GameRoom gameRoom = gameRooms.getRoom(roomName);
+		if (gameRoom == null || !gameRoom.containsPlayer(sender.getUsername())) return;
+		String message = dataInput == null ? "" : dataInput.getChatString();
+		ChatData sanitized = new ChatData(sender.getUsername(), roomName,
+				message == null ? "" : message);
 
 		for (Player player : gameRoom.getPlayers()) {
-			sendChatDataToClient((Human) player, dataInput);
+			if (player instanceof Human) sendChatDataToClient((Human) player, sanitized);
 		}
 	}
 
@@ -102,8 +113,13 @@ public class Server {
 	 * @param gameRoom
 	 *            - name of the room to add
 	 */
-	public synchronized void addRoom(String gameRoom) {
-		gameRooms.createRoom(gameRoom);
+	public synchronized boolean addRoom(String gameRoom) {
+		try {
+			gameRooms.createRoom(gameRoom);
+			return true;
+		} catch (IllegalArgumentException e) {
+			return false;
+		}
 	}
 
 	/**
@@ -116,29 +132,17 @@ public class Server {
 	 * @param nextRoom
 	 *            - room that user is entering
 	 */
-	public synchronized void movePlayer(String username, String currentRoom,
+	public synchronized boolean movePlayer(String username, String currentRoom,
 			String nextRoom) {
-
-		GameRoom oldRoom, newRoom;
-
-		if (gameRooms.containsRoom(currentRoom)) {
-			oldRoom = gameRooms.getRoom(currentRoom);
-		} else {
-			oldRoom = null;
-			System.out.println("currentRoom does not exists.");
-		}
-
-		if (gameRooms.containsRoom(nextRoom)) {
-			newRoom = gameRooms.getRoom(nextRoom);
-		} else {
-			newRoom = null;
-			System.out.println("nextRoom does not exists.");
-		}
-
+		GameRoom oldRoom = gameRooms.getRoom(currentRoom);
+		GameRoom newRoom = gameRooms.getRoom(nextRoom);
+		if (oldRoom == null || newRoom == null) return false;
+		if (!"Lobby".equals(nextRoom) && !newRoom.getGameProtocol().canJoin()) return false;
 		Player player = oldRoom.removePlayer(username);
-		if (player == null)
-			System.out.println("player does not exist");
+		if (player == null) return false;
 		newRoom.addPlayer(player);
+		if (player instanceof Human) ((Human) player).setRoomName(nextRoom);
+		return true;
 	}
 
 	/**
@@ -169,16 +173,12 @@ public class Server {
 	public synchronized void sendChatDataToClient(Human player,
 			ChatData dataInput) {
 
-		ObjectOutputStream outToClient;
-
-		if (!player.getChatSocket().isClosed()) {
+		if (player.getChatSocket() != null && !player.getChatSocket().isClosed()) {
 			try {
-				outToClient = new ObjectOutputStream(player.getChatSocket()
-						.getOutputStream());
-				outToClient.writeObject(dataInput);
+				player.sendChat(dataInput);
 			} catch (IOException ioe) {
-				System.out
-						.println("Error writing to a chat socket.  Cannot send data.");
+				removePlayer(player.getUsername());
+				player.closeConnections();
 			}
 		}
 	}
@@ -187,74 +187,44 @@ public class Server {
 	 * Starts the server.
 	 */
 	public void startServer() {
+		synchronized (this) {
+			if (serverRunning) return;
+			serverRunning = true;
+		}
 		noNamePlayers = new ArrayList<Player>(0);
-		serverRunning = true;
 		logOutput("Starting server...", SYSTEM_LOG);
 		try {
-			servSock = new ServerSocket(SERVER_PORT);
-			logOutput("Server started.", SYSTEM_LOG);
-		} catch (Exception e) {
-			logOutput("Cannot create a new server socket.", ERROR_LOG);
-		}
-
-		logOutput("Starting chat server...", SYSTEM_LOG);
-		try {
-			chatSock = new ServerSocket(CHATROOM_PORT);
-			logOutput("Chat server started.", SYSTEM_LOG);
-		} catch (Exception e) {
-			logOutput("Cannot create a new server socket.", ERROR_LOG);
+			servSock = new ServerSocket(configuredServerPort);
+			chatSock = new ServerSocket(configuredChatPort);
+			logOutput("Server started on ports " + getServerPort() + " and "
+					+ getChatPort() + ".", SYSTEM_LOG);
+		} catch (IOException e) {
+			serverRunning = false;
+			logOutput("Cannot start the server. Ports " + configuredServerPort + " and "
+					+ configuredChatPort + " must be available.", ERROR_LOG);
+			closeServerSockets();
+			return;
 		}
 
 		while (serverRunning) {
-			// listen for and accept a connection
 			Socket connSock = null;
 			Socket chatConnSock = null;
-
-			if (!servSock.isClosed()) {
-				try {
-					connSock = servSock.accept();
-				} catch (IOException e) {
-					logOutput("Server socket closed unexpectedly.", ERROR_LOG);
-				}
-			}
-
-			if (!chatSock.isClosed()) {
-				try {
-					chatConnSock = chatSock.accept();
-				} catch (IOException e) {
-					logOutput("Chat socket closed unexpectedly.", ERROR_LOG);
-				}
-			}
-
-			Human newPlayer = null;
-			// log the new connection (change the InetAddress toString to cut
-			// off a / at the beginning)
-			if (!servSock.isClosed()) {
-				logOutput("New connection has been made from "
-						+ connSock.getInetAddress().toString().substring(1),
-						SYSTEM_LOG);
-
-				// add the new connection to a list of all the connected clients
-				newPlayer = new Human(connSock);
-				noNamePlayers.add(newPlayer);
-
-				// send the new connection to a thread to allow others to
-				// connect
-				(new Thread(new ServerThread(connSock, this))).start();
-			} else
-				System.out.println("Server socket is closed");
-
-			if (!chatSock.isClosed()) {
-				// start chat sock
-				logOutput(
-						"New chat connection has been made from "
-								+ chatConnSock.getInetAddress().toString()
-										.substring(1), SYSTEM_LOG);
+			try {
+				connSock = servSock.accept();
+				chatConnSock = chatSock.accept();
+				Human newPlayer = new Human(connSock);
 				newPlayer.addChatSocket(chatConnSock);
 				noNamePlayers.add(newPlayer);
-				(new Thread(new ServerChatThread(chatConnSock, this))).start();
-			} else
-				System.out.println("Chat socket is closed");
+				logOutput("New connection from " + connSock.getInetAddress().getHostAddress(), SYSTEM_LOG);
+				ServerThread gameThread = new ServerThread(connSock, this);
+				registerGameClient(connSock, gameThread);
+				new Thread(gameThread, "game-client").start();
+				new Thread(new ServerChatThread(chatConnSock, this, newPlayer), "chat-client").start();
+			} catch (IOException e) {
+				closeSocket(connSock);
+				closeSocket(chatConnSock);
+				if (serverRunning) logOutput("Unable to accept a client connection.", ERROR_LOG);
+			}
 		}
 	}
 
@@ -264,13 +234,71 @@ public class Server {
 	public void stopServer() {
 		serverRunning = false;
 
-		try {
-			logOutput("Stopping the server...  ", SYSTEM_LOG);
-			servSock.close();
-			logOutput("Stopped.", SYSTEM_LOG);
-		} catch (Exception e) {
+		logOutput("Stopping the server...", SYSTEM_LOG);
+		closeServerSockets();
+		closeClientConnections();
+		logOutput("Stopped.", SYSTEM_LOG);
+	}
 
+	public boolean isRunning() {
+		return serverRunning;
+	}
+
+	public int getServerPort() {
+		return servSock == null ? configuredServerPort : servSock.getLocalPort();
+	}
+
+	public int getChatPort() {
+		return chatSock == null ? configuredChatPort : chatSock.getLocalPort();
+	}
+
+	private void closeServerSockets() {
+		closeSocket(servSock);
+		closeSocket(chatSock);
+	}
+
+	private synchronized void closeClientConnections() {
+		if (noNamePlayers != null) {
+			for (Player player : new ArrayList<Player>(noNamePlayers)) {
+				if (player instanceof Human) ((Human) player).closeConnections();
+			}
+			noNamePlayers.clear();
 		}
+		for (GameRoom room : gameRooms) {
+			for (Player player : room.getPlayers()) {
+				room.removePlayer(player.getUsername());
+				if (player instanceof Human) ((Human) player).closeConnections();
+			}
+		}
+		gameClients.clear();
+	}
+
+	synchronized void registerGameClient(Socket socket, ServerThread thread) {
+		gameClients.put(socket, thread);
+	}
+
+	synchronized void unregisterGameClient(Socket socket) {
+		gameClients.remove(socket);
+	}
+
+	/** Sends a state tailored to each player, without exposing other hands. */
+	public synchronized void broadcastGameState(String roomName,
+			ServerGameProtocol protocol) {
+		GameRoom room = gameRooms.getRoom(roomName);
+		if (room == null) return;
+		for (Player player : room.getPlayers()) {
+			if (!(player instanceof Human)) continue;
+			Human human = (Human) player;
+			ServerThread thread = gameClients.get(human.getSocket());
+			if (thread != null) {
+				GameStateData state = protocol.snapshotFor(player.getUsername(), null);
+				thread.sendData(state);
+			}
+		}
+	}
+
+	private void closeSocket(Closeable socket) {
+		try { if (socket != null) socket.close(); } catch (IOException ignored) { }
 	}
 
 	/**
@@ -286,12 +314,24 @@ public class Server {
 
 	// remove a player by its socket
 	public synchronized void removePlayer(Socket socket) {
-		for (Player player : noNamePlayers) {
-			if (((Human) player).getSocket().equals(socket)) {
-				boolean playerRemoved = noNamePlayers.remove(player);
-				System.out.println("Player " + player.getUsername()
-						+ " was removed.");
-				break;
+		for (Player player : new ArrayList<Player>(noNamePlayers)) {
+			Human human = (Human) player;
+			if (socket.equals(human.getSocket()) || socket.equals(human.getChatSocket())) {
+				noNamePlayers.remove(player);
+				human.closeConnections();
+				return;
+			}
+		}
+		for (GameRoom room : gameRooms) {
+			for (Player player : room.getPlayers()) {
+				if (player instanceof Human) {
+					Human human = (Human) player;
+					if (socket.equals(human.getSocket()) || socket.equals(human.getChatSocket())) {
+						room.removePlayer(player.getUsername());
+						human.closeConnections();
+						return;
+					}
+				}
 			}
 		}
 	}
@@ -306,7 +346,8 @@ public class Server {
 	public synchronized void removePlayer(String username) {
 		for (GameRoom gameRoom : gameRooms) {
 			if (gameRoom.containsPlayer(username)) {
-				gameRoom.removePlayer(username);
+				Player removed = gameRoom.removePlayer(username);
+				if (removed instanceof Human) ((Human) removed).closeConnections();
 			}
 		}
 	}
@@ -329,6 +370,8 @@ public class Server {
 			if (player instanceof Human) {
 				if (((Human) player).getSocket().equals(gameSocket)) {
 					player.setUsername(username);
+					((Human) player).setLoginToken(loginToken);
+					((Human) player).setRoomName("Lobby");
 					// use move player
 					gameRooms.addPlayerToRoom(player, "Lobby");
 					noNamePlayers.remove(player);
@@ -349,9 +392,9 @@ public class Server {
 	 *            - category of log
 	 */
 	public void logOutput(String textToOutput, int log) {
-		gui
-				.writeToTextArea("[" + ServerLog.now() + "]  " + textToOutput
-						+ "\n");
+		if (gui != null) {
+			gui.writeToTextArea("[" + ServerLog.now() + "]  " + textToOutput + "\n");
+		}
 		switch (log) {
 		case ERROR_LOG:
 			errorLog.write(textToOutput);

@@ -13,6 +13,7 @@ public class Human extends Player {
 	
 	protected Socket socket; // socket for the game
 	protected Socket chatSocket; // socket for chat
+	protected transient ObjectOutputStream chatOutput;
 	protected String roomName; // current room name
 	protected String loginToken;
 
@@ -54,8 +55,24 @@ public class Human extends Player {
 		return socket;
 	}
 	
-	public void addChatSocket(Socket chatSocket) {
+	public void addChatSocket(Socket chatSocket) throws IOException {
 		this.chatSocket = chatSocket;
+		this.chatOutput = new ObjectOutputStream(chatSocket.getOutputStream());
+		this.chatOutput.flush();
+	}
+
+	public synchronized void sendChat(Object message) throws IOException {
+		if (chatOutput == null || chatSocket == null || chatSocket.isClosed()) {
+			throw new IOException("Chat connection is closed");
+		}
+		chatOutput.writeObject(message);
+		chatOutput.flush();
+		chatOutput.reset();
+	}
+
+	public void closeConnections() {
+		try { if (socket != null) socket.close(); } catch (IOException ignored) { }
+		try { if (chatSocket != null) chatSocket.close(); } catch (IOException ignored) { }
 	}
 	
 	public void setSocket(Socket sock) {

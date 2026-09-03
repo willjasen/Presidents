@@ -1,0 +1,150 @@
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <meta name="theme-color" content="#082e25" />
+    <meta name="description" content="Play Presidents, the classic climbing card game." />
+    <title>Presidents — The Card Game</title>
+    <link rel="stylesheet" href="styles.css" />
+  </head>
+  <body>
+    <div class="app-shell">
+      <header class="topbar">
+        <a class="brand" href="#" aria-label="Presidents home">
+          <span class="brand-mark" aria-hidden="true">P</span>
+          <span>Presidents</span>
+        </a>
+        <div class="topbar-actions">
+          <button class="text-button" id="rules-button" type="button">How to play</button>
+          <button class="text-button leaderboard-button" id="leaderboard-button" type="button" hidden>Leaderboard</button>
+          <button class="account-button" id="account-button" type="button">
+            <span class="account-dot" aria-hidden="true"></span>
+            <span id="account-label">Sign in</span>
+          </button>
+          <button class="icon-button" id="sound-button" type="button" aria-label="Turn sound off" title="Sound">
+            <span aria-hidden="true">♪</span>
+          </button>
+        </div>
+      </header>
+
+      <main class="game" aria-label="Presidents card table">
+        <section class="table" aria-label="Game table">
+          <div class="felt-glow" aria-hidden="true"></div>
+
+          <div id="opponents" aria-label="Computer opponents"></div>
+
+          <div class="turn-banner" id="turn-banner" role="status">Your turn</div>
+
+          <div class="play-area">
+            <div class="pile" id="pile" aria-label="Cards in play">
+              <div class="empty-pile"><span>♣</span><small>New trick</small></div>
+            </div>
+            <div class="last-play" id="last-play">You have the 3 of clubs — lead the first trick.</div>
+          </div>
+
+          <div class="you-badge">
+            <div class="avatar avatar-you" aria-hidden="true">Y</div>
+            <div class="player-copy"><strong>You</strong><span id="your-count">13 cards</span></div>
+          </div>
+        </section>
+
+        <section class="hand-panel" aria-label="Your hand">
+          <div class="hand-heading">
+            <div>
+              <p class="eyebrow">YOUR HAND</p>
+              <h1>Choose cards to play</h1>
+            </div>
+            <div class="game-settings">
+              <label for="player-count">Players</label>
+              <select id="player-count" aria-label="Number of players">
+                <option value="2">2</option>
+                <option value="3">3</option>
+                <option value="4" selected>4</option>
+                <option value="5">5</option>
+                <option value="6">6</option>
+                <option value="7">7</option>
+              </select>
+              <button class="new-game" id="new-game-button" type="button">New game</button>
+            </div>
+          </div>
+
+          <div class="hand" id="hand" aria-label="Your cards">
+            <button class="card selected black" type="button" aria-pressed="true"><span class="rank">3</span><span class="suit">♣</span></button>
+            <button class="card red" type="button"><span class="rank">4</span><span class="suit">♥</span></button>
+            <button class="card black" type="button"><span class="rank">5</span><span class="suit">♠</span></button>
+            <button class="card red" type="button"><span class="rank">6</span><span class="suit">♦</span></button>
+            <button class="card black" type="button"><span class="rank">7</span><span class="suit">♣</span></button>
+            <button class="card red" type="button"><span class="rank">8</span><span class="suit">♥</span></button>
+            <button class="card black" type="button"><span class="rank">9</span><span class="suit">♠</span></button>
+            <button class="card red" type="button"><span class="rank">10</span><span class="suit">♦</span></button>
+            <button class="card black" type="button"><span class="rank">J</span><span class="suit">♣</span></button>
+          </div>
+
+          <div class="action-bar">
+            <p id="selection-hint">1 card selected</p>
+            <div class="game-actions">
+              <button class="pass-button" id="pass-button" type="button" disabled>Pass</button>
+              <button class="play-button" id="play-button" type="button">Play card <span aria-hidden="true">→</span></button>
+            </div>
+          </div>
+        </section>
+      </main>
+    </div>
+
+    <dialog id="rules-dialog">
+      <div class="dialog-head">
+        <div><p class="eyebrow">THE BASICS</p><h2>How to play</h2></div>
+        <button class="dialog-close" id="rules-close" type="button" aria-label="Close rules">×</button>
+      </div>
+      <div class="rules-copy">
+        <p>Choose 2–7 players and be the first to get rid of every card in your hand.</p>
+        <ol>
+          <li>The player holding the <strong>3 of clubs</strong> starts the game.</li>
+          <li>Play one or more cards of the same rank. The next play must use at least as many cards at an equal or higher rank.</li>
+          <li>You may pass, but you sit out until the trick clears. The last player to make a play leads the next trick.</li>
+          <li>Threes are low. Twos are high and immediately clear the trick.</li>
+        </ol>
+      </div>
+      <button class="play-button dialog-done" id="rules-done" type="button">Got it</button>
+    </dialog>
+
+    <dialog id="auth-dialog" class="auth-dialog">
+      <div class="dialog-head">
+        <div><p class="eyebrow">PLAYER ACCOUNT</p><h2 id="auth-title">Welcome back</h2></div>
+        <button class="dialog-close" id="auth-close" type="button" aria-label="Close sign in">×</button>
+      </div>
+      <div id="auth-signed-out">
+        <p class="auth-intro">Use a passkey to keep your identity and game record—no password to remember.</p>
+        <button class="play-button auth-primary" id="signin-button" type="button">Sign in with a passkey</button>
+        <div class="auth-divider"><span>or make an account</span></div>
+        <label class="field-label" for="display-name">Your name</label>
+        <input class="name-input" id="display-name" maxlength="24" autocomplete="username webauthn" placeholder="What should we call you?" />
+        <button class="pass-button auth-secondary" id="register-button" type="button">Create account with a passkey</button>
+        <p class="auth-note" id="auth-note">Passkeys use Face ID, Touch ID, Windows Hello, or your device PIN.</p>
+      </div>
+      <div id="auth-signed-in" hidden>
+        <div class="profile-card">
+          <div class="avatar avatar-you" id="profile-avatar">Y</div>
+          <div><strong id="profile-name">You</strong><span id="profile-record">0 games · 0 wins</span></div>
+        </div>
+        <button class="pass-button auth-secondary" id="signout-button" type="button">Sign out</button>
+      </div>
+    </dialog>
+
+    <dialog id="leaderboard-dialog" class="leaderboard-dialog">
+      <div class="dialog-head">
+        <div><p class="eyebrow">SIGNED-IN PLAYERS</p><h2>Leaderboard</h2></div>
+        <button class="dialog-close" id="leaderboard-close" type="button" aria-label="Close leaderboard">×</button>
+      </div>
+      <p class="leaderboard-intro">Records are saved after each completed game.</p>
+      <div class="leaderboard-table" id="leaderboard-table" aria-live="polite">
+        <p class="leaderboard-empty">Loading standings…</p>
+      </div>
+    </dialog>
+
+    <div class="toast" id="toast" role="alert" aria-live="assertive"></div>
+    <script src="vendor/simplewebauthn-browser.umd.min.js"></script>
+    <script type="module" src="app.js?v=11"></script>
+  </body>
+</html>

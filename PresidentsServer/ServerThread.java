@@ -6,6 +6,7 @@ import java.io.ObjectOutputStream;
 import java.net.*;
 
 import PresidentsData.Data;
+import PresidentsData.SafeObjectInput;
 
 /**
  * Thread started by the server to handle the input and output of a network
@@ -33,6 +34,8 @@ public class ServerThread implements Runnable {
 
 	/** Game socket associated with a connected client. */
 	private Socket clientGameSock;
+	private ObjectInputStream input;
+	private ObjectOutputStream output;
 
 	private ServerThread() {
 
@@ -71,35 +74,31 @@ public class ServerThread implements Runnable {
 		// hold data to be processed and that has been processed
 		Data dataInput, dataOutput;
 
-		// while the connection isn't closed and there is data, process
-		// it and send info to client
-		while (!clientGameSock.isClosed() && (dataInput = getData()) != null) {
-			dataOutput = psp.processInput(dataInput);
-			sendData(dataOutput);
+		try {
+			output = new ObjectOutputStream(clientGameSock.getOutputStream());
+			output.flush();
+			input = SafeObjectInput.open(clientGameSock.getInputStream());
+			while (!clientGameSock.isClosed() && (dataInput = getData()) != null) {
+				dataOutput = psp.processInput(dataInput);
+				if (dataOutput != null) sendData(dataOutput);
+			}
+		} catch (IOException e) {
+			serverInstance.logOutput("Client connection could not be initialized.", ERROR_LOG);
+		} finally {
+			psp.close();
+			serverInstance.unregisterGameClient(clientGameSock);
+			serverInstance.removePlayer(clientGameSock);
+			try { clientGameSock.close(); } catch (IOException ignored) { }
 		}
 	}
 
 	private Data getData() {
 		Data data = null;
-		ObjectInputStream inFromClient = null;
-
 		if (!clientGameSock.isClosed()) {
 			try {
-				// Get reader for the socket, and then read a line from
-				// the socket
-				inFromClient = new ObjectInputStream(clientGameSock
-						.getInputStream());
-				try {
-					data = (Data) inFromClient.readObject();
-				} catch (Exception e) {
-					System.out.println("Error reading from a socket.");
-					serverInstance.logOutput("Error reading from a socket.",
-							ERROR_LOG);
-					serverInstance.removePlayer(clientGameSock);
-				}
-			} catch (IOException e) {
-				serverInstance.logOutput("Client has disconnected.", ERROR_LOG);
-				serverInstance.removePlayer(clientGameSock);
+				data = (Data) input.readObject();
+			} catch (IOException | ClassNotFoundException e) {
+				return null;
 			}
 		} else {
 			// remove the player
@@ -117,21 +116,19 @@ public class ServerThread implements Runnable {
 	 *            - data to send to client
 	 * @return if data was sent successfully
 	 */
-	private boolean sendData(Data data) {
-		ObjectOutputStream outToClient = null;
-
+	public synchronized boolean sendData(Data data) {
 		if (!clientGameSock.isClosed()) {
 			try {
-				outToClient = new ObjectOutputStream(clientGameSock
-						.getOutputStream());
-				outToClient.writeObject(data);
+				output.writeObject(data);
+				output.flush();
+				output.reset();
 			} catch (IOException ioe) {
 				serverInstance.logOutput("Error writing to a socket.",
 						ERROR_LOG);
 				serverInstance.removePlayer(clientGameSock);
-				return true;
+				return false;
 			}
-			return false;
+			return true;
 		}
 		return false;
 	}

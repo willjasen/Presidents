@@ -2,10 +2,6 @@ package PresidentsServer;
 
 import java.util.ArrayList;
 import java.util.HashMap;
-import java.util.Iterator;
-import java.util.Map;
-import java.util.Set;
-import java.util.Map.Entry;
 
 import PresidentsPlayer.Card;
 import PresidentsPlayer.Hand;
@@ -40,6 +36,9 @@ public class GameRoom {
 	 *            - player to add
 	 */
 	public synchronized void addPlayer(Player player) {
+		if (player == null || player.getUsername() == null) {
+			throw new IllegalArgumentException("A room player must have a username");
+		}
 		players.put(player.getUsername(), player);
 	}
 
@@ -129,29 +128,12 @@ public class GameRoom {
 	}
 
 	public synchronized ArrayList<Player> getPlayers() {
-		ArrayList<Player> playersList = new ArrayList<Player>();
-		Set playersSet = players.entrySet();
-		Iterator<Map.Entry> i = playersSet.iterator();
-
-		while (i.hasNext()) {
-			Map.Entry me = i.next();
-			playersList.add((Player) me.getValue());
-		}
-
-		return playersList;
+		return new ArrayList<Player>(players.values());
 	}
-	
+
 	public synchronized ArrayList<String> getPlayerNames() {
-		ArrayList<String> playersList = new ArrayList<String>();
-		Set playersSet = players.entrySet();
-		Iterator<Map.Entry> i = playersSet.iterator();
-
-		while (i.hasNext()) {
-			Map.Entry me = i.next();
-			Player player = (Player) me.getValue();
-			playersList.add(player.getUsername());
-		}
-
+		ArrayList<String> playersList = new ArrayList<String>(players.keySet());
+		playersList.sort(String.CASE_INSENSITIVE_ORDER);
 		return playersList;
 	}
 

@@ -6,6 +6,8 @@ import javax.swing.*; // Swing GUI classes are defined here.
 import PresidentsData.ChatData;
 import PresidentsData.CommandData;
 import PresidentsData.Data;
+import PresidentsData.GameActionData;
+import PresidentsData.GameStateData;
 import PresidentsData.MD5;
 import PresidentsData.RegisterUserData;
 import PresidentsData.RoomData;
@@ -22,7 +24,7 @@ import PresidentsPlayer.Player;
  * @author willjasen
  * 
  */
-public class Client extends JApplet {
+public class Client extends JFrame {
 
 	private static final long serialVersionUID = -5085586743177866914L;
 
@@ -32,7 +34,7 @@ public class Client extends JApplet {
 	private Human clientPlayer;
 	private ClientNetwork network;
 
-	private JList list;
+	private JList<String> list;
 
 	// Variables declaration for login screen - do not modify
 	private javax.swing.JButton btnLogin;
@@ -47,9 +49,9 @@ public class Client extends JApplet {
 
 	// Variables declaration for register screen - do not modify
 	private javax.swing.JButton btnRegisterUser;
-	private javax.swing.JComboBox cmbRegisterDay;
-	private javax.swing.JComboBox cmbRegisterMonth;
-	private javax.swing.JComboBox cmbRegisterYear;
+	private javax.swing.JComboBox<String> cmbRegisterDay;
+	private javax.swing.JComboBox<String> cmbRegisterMonth;
+	private javax.swing.JComboBox<String> cmbRegisterYear;
 	private javax.swing.JLabel lblBirthday;
 	private javax.swing.JLabel lblEmail;
 	private javax.swing.JLabel lblFirstName;
@@ -86,7 +88,12 @@ public class Client extends JApplet {
 
 	// Variables declaration for room screen - do not modify
 	private javax.swing.JButton btnPlayCards;
+	private javax.swing.JButton btnPass;
+	private javax.swing.JButton btnStartGame;
 	private javax.swing.JButton btnRoomChat;
+	private javax.swing.JLabel lblGameStatus;
+	private javax.swing.JLabel lblTable;
+	private javax.swing.JList<String> lstRoomPlayers;
 	private javax.swing.JLabel jLabel1;
 	private javax.swing.JLabel jLabel2;
 	private javax.swing.JLayeredPane pnlHand;
@@ -95,14 +102,18 @@ public class Client extends JApplet {
 	private javax.swing.JPanel pnlRoomChat;
 	private javax.swing.JPanel pnlRoomScreen;
 	private javax.swing.JLayeredPane pnlTopPlayer;
+	private GameStateData currentGameState;
 
 	// End of room screen variables declaration
 
 	public Client() {
+		super("Presidents");
 		// start the connection to the server when program is started
 		network = new ClientNetwork();
-		network.createGameThread(this);
-		network.createChatThread(this);
+		if (network.isConnected()) {
+			network.createGameThread(this);
+			network.createChatThread(this);
+		}
 	}
 
 	public void init() {
@@ -117,18 +128,36 @@ public class Client extends JApplet {
 		} catch (Exception ex) {
 			ex.printStackTrace();
 		}
+		setDefaultCloseOperation(JFrame.EXIT_ON_CLOSE);
+		addWindowListener(new java.awt.event.WindowAdapter() {
+			@Override
+			public void windowClosing(java.awt.event.WindowEvent event) {
+				network.close();
+			}
+		});
+		setLocationRelativeTo(null);
+		setVisible(true);
+		if (!network.isConnected()) {
+			JOptionPane.showMessageDialog(this,
+					"The Presidents server is not running. Start the server, then reopen this client.",
+					"Unable to connect", JOptionPane.ERROR_MESSAGE);
+		}
+	}
+
+	public static void main(String[] args) {
+		new Client().init();
 	}
 	
 	public void updateLobbyPlayerList(CommandData dataInput) {
 		ArrayList<String> players = dataInput.getPlayers();
-		DefaultListModel listModelPlayers = new DefaultListModel();
+		DefaultListModel<String> listModelPlayers = new DefaultListModel<String>();
 
 		for (int i = 0; i < players.size(); i++) {
 			listModelPlayers.addElement(players.get(i));
 			System.out.println("1" + players.get(i));
 		}
 
-		list = new JList(listModelPlayers);
+		list = new JList<String>(listModelPlayers);
 		pnlPlayerList.setViewportView(list);
 	}
 
@@ -156,12 +185,8 @@ public class Client extends JApplet {
         txtChatRoom.setRows(5);
         spChatRoom.setViewportView(txtChatRoom);
 
-        btnLobbyChat.setText("Send");
-        btnLobbyChat.addMouseListener(new java.awt.event.MouseAdapter() {
-            public void mouseClicked(java.awt.event.MouseEvent evt) {
-                btnLobbyChatMouseClicked(evt);
-            }
-        });
+		btnLobbyChat.setText("Send");
+		btnLobbyChat.addActionListener(evt -> sendChatData());
 
         javax.swing.GroupLayout pnlLobbyChatLayout = new javax.swing.GroupLayout(pnlLobbyChat);
         pnlLobbyChat.setLayout(pnlLobbyChatLayout);
@@ -189,24 +214,16 @@ public class Client extends JApplet {
                 .addContainerGap())
         );
 
-        btnLobbyEnterRoom.setText("Enter Room");
-        btnLobbyEnterRoom.addMouseListener(new java.awt.event.MouseAdapter() {
-            public void mouseClicked(java.awt.event.MouseEvent evt) {
-                btnLobbyEnterRoomMouseClicked(evt);
-            }
-        });
+		btnLobbyEnterRoom.setText("Enter Room");
+		btnLobbyEnterRoom.addActionListener(evt -> enterRoom());
 
         txtLobbyRooms.setColumns(20);
         txtLobbyRooms.setEditable(false);
         txtLobbyRooms.setRows(5);
         spLobbyRooms.setViewportView(txtLobbyRooms);
 
-        btnLobbyCreateRoom.setText("Create Room");
-        btnLobbyCreateRoom.addMouseListener(new java.awt.event.MouseAdapter() {
-            public void mouseClicked(java.awt.event.MouseEvent evt) {
-                btnLobbyCreateRoomMouseClicked(evt);
-            }
-        });
+		btnLobbyCreateRoom.setText("Create Room");
+		btnLobbyCreateRoom.addActionListener(evt -> createNewRoom());
 
         javax.swing.GroupLayout pnlRoomsLayout = new javax.swing.GroupLayout(pnlRooms);
         pnlRooms.setLayout(pnlRoomsLayout);
@@ -304,24 +321,16 @@ public class Client extends JApplet {
 		if (txtRegisterUsername != null)
 			txtUsername.setText(txtRegisterUsername.getText());
 
-		txtUsername.setText("willjasen");
-		txtPassword.setText("test");
-
-		btnRegister.setText("Register");
-		btnRegister.addMouseListener(new java.awt.event.MouseAdapter() {
-			public void mouseClicked(java.awt.event.MouseEvent evt) {
-				btnRegisterMouseClicked(evt);
-			}
+		btnRegister.setText("Create Account");
+		btnRegister.addActionListener(evt -> {
+			sendData(new CommandData("REGISTER"));
+			createRegisterScreen();
 		});
 
 		lblUsername.setText("Username:");
 
 		btnLogin.setText("Login");
-		btnLogin.addMouseListener(new java.awt.event.MouseAdapter() {
-			public void mouseClicked(java.awt.event.MouseEvent evt) {
-				btnLoginMouseClicked(evt);
-			}
-		});
+		btnLogin.addActionListener(evt -> login());
 
 		lblPassword.setText("Password:");
 
@@ -483,16 +492,12 @@ public class Client extends JApplet {
 		lblRegisterPassword = new javax.swing.JLabel();
 		lblLastName = new javax.swing.JLabel();
 		txtRegisterPasswordAgain = new javax.swing.JPasswordField();
-		cmbRegisterMonth = new javax.swing.JComboBox();
-		cmbRegisterDay = new javax.swing.JComboBox();
-		cmbRegisterYear = new javax.swing.JComboBox();
+		cmbRegisterMonth = new javax.swing.JComboBox<String>();
+		cmbRegisterDay = new javax.swing.JComboBox<String>();
+		cmbRegisterYear = new javax.swing.JComboBox<String>();
 
 		btnRegisterUser.setText("Register");
-		btnRegisterUser.addMouseListener(new java.awt.event.MouseAdapter() {
-			public void mouseClicked(java.awt.event.MouseEvent evt) {
-				btnRegisterUserMouseClicked(evt);
-			}
-		});
+		btnRegisterUser.addActionListener(evt -> register());
 
 		lblRegisterPasswordAgain.setText("*Password again:");
 
@@ -510,7 +515,7 @@ public class Client extends JApplet {
 
 		lblLastName.setText("Last Name:");
 
-		cmbRegisterMonth.setModel(new javax.swing.DefaultComboBoxModel(
+		cmbRegisterMonth.setModel(new javax.swing.DefaultComboBoxModel<String>(
 				new String[] { "January", "February", "March", "April", "May",
 						"June", "July", "August", "September", "October",
 						"November", "December" }));
@@ -520,29 +525,20 @@ public class Client extends JApplet {
 			}
 		});
 
-		cmbRegisterDay.setModel(new javax.swing.DefaultComboBoxModel(
+		cmbRegisterDay.setModel(new javax.swing.DefaultComboBoxModel<String>(
 				new String[] { "1", "2", "3", "4", "5", "6", "7", "8", "9",
 						"10", "11", "12", "13", "14", "15", "16", "17", "18",
 						"19", "20", "21", "22", "23", "24", "25", "26", "27",
 						"28", "29", "30", "31" }));
 
-		cmbRegisterYear.setModel(new javax.swing.DefaultComboBoxModel(
-				new String[] { "2008", "2007", "2006", "2005", "2004", "2003",
-						"2002", "2001", "2000", "1999", "1998", "1997", "1996",
-						"1995", "1994", "1993", "1992", "1991", "1990", "1989",
-						"1988", "1987", "1986", "1985", "1984", "1983", "1982",
-						"1981", "1980", "1979", "1978", "1977", "1976", "1975",
-						"1974", "1973", "1972", "1971", "1970", "1969", "1968",
-						"1967", "1966", "1965", "1964", "1963", "1962", "1961",
-						"1960", "1959", "1958", "1957", "1956", "1955", "1954",
-						"1953", "1952", "1951", "1950", "1949", "1948", "1947",
-						"1946", "1945", "1944", "1943", "1942", "1941", "1940",
-						"1939", "1938", "1937", "1936", "1935", "1934", "1933",
-						"1932", "1931", "1930", "1929", "1928", "1927", "1926",
-						"1925", "1924", "1923", "1922", "1921", "1920", "1919",
-						"1918", "1917", "1916", "1915", "1914", "1913", "1912",
-						"1911", "1910", "1909", "1908", "1907", "1906", "1905",
-						"1904", "1903", "1902", "1901", "1900" }));
+		DefaultComboBoxModel<String> years = new DefaultComboBoxModel<String>();
+		for (int year = java.time.Year.now().getValue(); year >= 1900; year--) {
+			years.addElement(Integer.toString(year));
+		}
+		cmbRegisterYear.setModel(years);
+		cmbRegisterYear.setSelectedItem(Integer.toString(
+				java.time.Year.now().getValue() - 18));
+		cmbRegisterYear.addItemListener(evt -> cmbRegisterMonthItemStateChanged(evt));
 
 		javax.swing.GroupLayout pnlRegisterLayout = new javax.swing.GroupLayout(
 				pnlRegister);
@@ -793,18 +789,9 @@ public class Client extends JApplet {
 		for (int i = 0; i < clientPlayer.getHand().getSize(); i++) {
 			Card tempCard = clientPlayer.getHand().getCard(i);
 			JLabel tempLabel = tempCard.getLabel();
-			if (clientPlayer.getHand().getCard(i).getLabel().equals(
-					clickedLabel)) {
-				if (clientPlayer.getHand().getCard(i).hasBeenClicked() == true) {
-					// tempLabel.setBorder(null);
-					tempLabel.setBounds(20 * (i + 1), 10, 71, 96);
-				} else {
-					// tempLabel.setBorder(javax.swing.BorderFactory.
-					// createLineBorder(new java.awt.Color(255, 0, 0)));
-					tempLabel.setBounds(20 * (i + 1), 00, 71, 96);
-				}
-				clientPlayer.getHand().getCard(i).switchClicked();
-				clientPlayer.getHand().getCard(i).setLabel(tempLabel);
+			if (tempLabel == clickedLabel) {
+				tempLabel.setLocation(tempLabel.getX(), tempCard.hasBeenClicked() ? 12 : 2);
+				tempCard.switchClicked();
 				break;
 			}
 		}
@@ -902,11 +889,7 @@ public class Client extends JApplet {
 		spChatRoom.setViewportView(txtChatRoom);
 
 		btnRoomChat.setText("Send");
-		btnRoomChat.addMouseListener(new java.awt.event.MouseAdapter() {
-			public void mouseClicked(java.awt.event.MouseEvent evt) {
-				btnRoomChatMouseClicked(evt);
-			}
-		});
+		btnRoomChat.addActionListener(evt -> sendChatData());
 
 		javax.swing.GroupLayout pnlRoomChatLayout = new javax.swing.GroupLayout(
 				pnlRoomChat);
@@ -974,11 +957,7 @@ public class Client extends JApplet {
 										.addContainerGap()));
 
 		btnPlayCards.setText("Play Cards");
-		btnPlayCards.addMouseListener(new java.awt.event.MouseAdapter() {
-			public void mouseClicked(java.awt.event.MouseEvent evt) {
-				btnPlayCardsMouseClicked(evt);
-			}
-		});
+		btnPlayCards.addActionListener(evt -> playSelectedCards());
 
 		javax.swing.GroupLayout pnlRoomScreenLayout = new javax.swing.GroupLayout(
 				pnlRoomScreen);
@@ -1142,6 +1121,192 @@ public class Client extends JApplet {
 						.addContainerGap(195, Short.MAX_VALUE)));
 	}
 
+	private void showGameRoomScreen(GameStateData state) {
+		if (pnlRoomScreen == null || pnlRoomScreen.getParent() == null) {
+			getContentPane().removeAll();
+			pnlRoomScreen = new JPanel(new BorderLayout(12, 12));
+			pnlRoomScreen.setBorder(BorderFactory.createEmptyBorder(14, 14, 14, 14));
+
+			lblGameStatus = new JLabel();
+			lblGameStatus.setFont(lblGameStatus.getFont().deriveFont(Font.BOLD, 16f));
+			lblTable = new JLabel(" ", SwingConstants.CENTER);
+			lblTable.setFont(lblTable.getFont().deriveFont(Font.BOLD, 20f));
+
+			pnlHand = new JLayeredPane();
+			pnlHand.setPreferredSize(new Dimension(900, 145));
+			JScrollPane handScroll = new JScrollPane(pnlHand,
+					ScrollPaneConstants.VERTICAL_SCROLLBAR_NEVER,
+					ScrollPaneConstants.HORIZONTAL_SCROLLBAR_AS_NEEDED);
+			handScroll.setBorder(BorderFactory.createTitledBorder("Your hand — click cards to select"));
+
+			lstRoomPlayers = new JList<String>();
+			JScrollPane playersScroll = new JScrollPane(lstRoomPlayers);
+			playersScroll.setPreferredSize(new Dimension(185, 180));
+			playersScroll.setBorder(BorderFactory.createTitledBorder("Players"));
+
+			JPanel tablePanel = new JPanel(new BorderLayout(8, 8));
+			tablePanel.add(lblTable, BorderLayout.NORTH);
+			tablePanel.add(handScroll, BorderLayout.CENTER);
+			tablePanel.add(playersScroll, BorderLayout.EAST);
+
+			btnStartGame = new JButton("Start Game");
+			btnStartGame.addActionListener(evt -> sendGameAction(GameActionData.START, null));
+			btnPlayCards = new JButton("Play Selected Cards");
+			btnPlayCards.addActionListener(evt -> playSelectedCards());
+			btnPass = new JButton("Pass");
+			btnPass.addActionListener(evt -> sendGameAction(GameActionData.PASS, null));
+			JPanel controls = new JPanel(new FlowLayout(FlowLayout.CENTER, 12, 4));
+			controls.add(btnStartGame);
+			controls.add(btnPlayCards);
+			controls.add(btnPass);
+			tablePanel.add(controls, BorderLayout.SOUTH);
+
+			if (txtChatRoom == null) txtChatRoom = new JTextArea();
+			txtChatRoom.setEditable(false);
+			txtChatRoom.setRows(7);
+			txtChatMessage = new JTextField();
+			btnRoomChat = new JButton("Send");
+			btnRoomChat.addActionListener(evt -> sendChatData());
+			txtChatMessage.addActionListener(evt -> sendChatData());
+			JPanel chatInput = new JPanel(new BorderLayout(6, 0));
+			chatInput.add(txtChatMessage, BorderLayout.CENTER);
+			chatInput.add(btnRoomChat, BorderLayout.EAST);
+			pnlRoomChat = new JPanel(new BorderLayout(4, 4));
+			pnlRoomChat.setBorder(BorderFactory.createTitledBorder("Room chat"));
+			pnlRoomChat.add(new JScrollPane(txtChatRoom), BorderLayout.CENTER);
+			pnlRoomChat.add(chatInput, BorderLayout.SOUTH);
+			pnlRoomChat.setPreferredSize(new Dimension(900, 190));
+
+			pnlRoomScreen.add(lblGameStatus, BorderLayout.NORTH);
+			pnlRoomScreen.add(tablePanel, BorderLayout.CENTER);
+			pnlRoomScreen.add(pnlRoomChat, BorderLayout.SOUTH);
+			getContentPane().setLayout(new BorderLayout());
+			getContentPane().add(pnlRoomScreen, BorderLayout.CENTER);
+			getContentPane().revalidate();
+			getContentPane().repaint();
+		}
+		updateGameRoomScreen(state);
+	}
+
+	private void updateGameRoomScreen(GameStateData state) {
+		currentGameState = state;
+		setTitle("Presidents — " + clientPlayer.getUsername() + " — " + state.getRoomName());
+
+		ArrayList<Card> cards = state.getHand().asList();
+		cards.sort((left, right) -> {
+			int rank = Integer.compare(left.getValue(), right.getValue());
+			return rank != 0 ? rank : Character.compare(left.getSuit(), right.getSuit());
+		});
+		Hand sortedHand = new Hand();
+		sortedHand.addCards(cards);
+		clientPlayer.setHand(sortedHand);
+		pnlHand.removeAll();
+		int spacing = cards.size() > 20 ? 25 : 32;
+		for (int i = 0; i < cards.size(); i++) {
+			Card card = cards.get(i);
+			JLabel label = new JLabel(new ImageIcon(getClass().getResource(
+					"/PresidentsClient/cards/classic/" + card + ".png")));
+			label.setBounds(12 + spacing * i, 12, 71, 96);
+			label.setToolTipText(cardName(card));
+			label.addMouseListener(new java.awt.event.MouseAdapter() {
+				@Override public void mouseClicked(java.awt.event.MouseEvent evt) {
+					clickedOnCard(evt);
+				}
+			});
+			card.setLabel(label);
+			pnlHand.add(label, Integer.valueOf(i));
+		}
+		pnlHand.setPreferredSize(new Dimension(Math.max(700, 95 + spacing * cards.size()), 125));
+		pnlHand.revalidate();
+		pnlHand.repaint();
+
+		DefaultListModel<String> players = new DefaultListModel<String>();
+		ArrayList<String> names = state.getPlayerNames();
+		ArrayList<Integer> counts = state.getCardCounts();
+		for (int i = 0; i < names.size(); i++) {
+			String suffix = "WAITING".equals(state.getStatus()) ? "ready"
+					: counts.get(i) + (counts.get(i) == 1 ? " card" : " cards");
+			players.addElement(names.get(i) + " — " + suffix);
+		}
+		lstRoomPlayers.setModel(players);
+
+		boolean waiting = "WAITING".equals(state.getStatus());
+		boolean playing = "PLAYING".equals(state.getStatus());
+		boolean myTurn = playing && clientPlayer.getUsername().equals(state.getCurrentPlayer());
+		btnStartGame.setVisible(waiting);
+		btnStartGame.setEnabled(waiting);
+		btnPlayCards.setVisible(!waiting);
+		btnPlayCards.setEnabled(myTurn);
+		btnPass.setVisible(!waiting);
+		btnPass.setEnabled(myTurn && state.getCardsInPlay() > 0);
+
+		if (waiting) {
+			lblGameStatus.setText("Room: " + state.getRoomName()
+					+ " — waiting for 2–7 players (" + names.size() + " joined)");
+			lblTable.setText("Start the game after another player joins");
+		} else if (playing) {
+			lblGameStatus.setText(myTurn ? "Your turn" : "Waiting for "
+					+ state.getCurrentPlayer());
+			lblTable.setText(state.getCardsInPlay() == 0
+					? "New trick — the leader cannot pass"
+					: "Current play: " + state.getCardsInPlay() + " × "
+							+ rankName(state.getValueInPlay()));
+		} else {
+			lblGameStatus.setText("Game over — " + formatFinishOrder(state.getFinishOrder()));
+			lblTable.setText("Winner: " + (state.getFinishOrder().isEmpty()
+					? "unknown" : state.getFinishOrder().get(0)));
+		}
+		if (state.getMessage() != null && !state.getMessage().isBlank()) {
+			JOptionPane.showMessageDialog(this, state.getMessage(), "Presidents",
+					JOptionPane.INFORMATION_MESSAGE);
+		}
+	}
+
+	private String formatFinishOrder(ArrayList<String> finishOrder) {
+		ArrayList<String> places = new ArrayList<String>();
+		for (int i = 0; i < finishOrder.size(); i++) {
+			places.add((i + 1) + ". " + finishOrder.get(i));
+		}
+		return String.join("   ", places);
+	}
+
+	private String cardName(Card card) {
+		return rankName(card.getValue()) + " of " + switch (card.getSuit()) {
+		case 'c' -> "clubs";
+		case 'h' -> "hearts";
+		case 's' -> "spades";
+		case 'd' -> "diamonds";
+		default -> "unknown suit";
+		};
+	}
+
+	private String rankName(int value) {
+		return switch (value) {
+		case 1 -> "3";
+		case 2 -> "4";
+		case 3 -> "5";
+		case 4 -> "6";
+		case 5 -> "7";
+		case 6 -> "8";
+		case 7 -> "9";
+		case 8 -> "10";
+		case 9 -> "Jack";
+		case 10 -> "Queen";
+		case 11 -> "King";
+		case 12 -> "Ace";
+		case 13 -> "2";
+		default -> "none";
+		};
+	}
+
+	private void sendGameAction(String action, java.util.List<Card> cards) {
+		GameActionData data = new GameActionData(action, cards);
+		data.setUsername(clientPlayer.getUsername());
+		data.setLoginToken(clientPlayer.getLoginToken());
+		data.setNextRoom(clientPlayer.getRoomName());
+		sendData(data);
+	}
+
 	private void sendData(Data data) {
 		network.sendData(data);
 	}
@@ -1165,16 +1330,18 @@ public class Client extends JApplet {
 			CommandData commandDataInput = (CommandData) dataInput;
 			if (commandDataInput.getCommand().equals("LOGIN")) {
 				if (commandDataInput.getSubCommand().equals("OKLOGIN")) {
-					showStatus("Logged in as " + txtUsername.getText());
+					setTitle("Presidents — " + txtUsername.getText());
 					clientPlayer = new Human(txtUsername.getText(),
 							commandDataInput.getLoginToken());
 					clientPlayer.setRoomName("Lobby");
 					createLobbyScreen(commandDataInput);
 
 				} else {
-					showStatus("Not logged in");
+					setTitle("Presidents — Not logged in");
 					JOptionPane.showMessageDialog(null,
-							"Login username or password incorrect.", "!",
+							"Login failed. If this is your first time running Presidents, "
+									+ "choose Create Account first.",
+							"Unable to log in",
 							JOptionPane.INFORMATION_MESSAGE);
 				}
 			}
@@ -1189,12 +1356,12 @@ public class Client extends JApplet {
 					createLoginScreen();
 				}
 
-				else if (commandDataInput.getCommand().equals("REGISTER_NO")) {
+				else if (commandDataInput.getSubCommand().equals("REGISTER_NO")) {
 
 					String username = txtRegisterUsername.getText();
-					String output = "User "
-							+ username
-							+ " already exists.  Please choose a different username.";
+					String output = "The account for " + username
+							+ " could not be created. The username may already be in use, "
+							+ "or one of the account fields may be invalid.";
 					JOptionPane.showMessageDialog(null, output, "Sign up",
 							JOptionPane.INFORMATION_MESSAGE);
 				}
@@ -1207,28 +1374,28 @@ public class Client extends JApplet {
 
 			else if (commandDataInput.getCommand().equals("ROOMS")) {
 				ArrayList<String> rooms = commandDataInput.getInfo();
-				DefaultListModel listModel = new DefaultListModel();
+				DefaultListModel<String> listModel = new DefaultListModel<String>();
 
 				for (int i = 2; i < rooms.size(); i++) {
 					listModel.addElement(rooms.get(i));
 				}
 
-				list = new JList(listModel);
+				list = new JList<String>(listModel);
 				spLobbyRooms.setViewportView(list);
 			}
 
 			else if (commandDataInput.getCommand().equals("ENTERROOM_OK")) {
-				
-				UserCommandData dataToSend = new UserCommandData();
 				String enteredRoom = commandDataInput.getSubCommand();
-				
-				dataToSend.setCommand("GETROOMINFO");
-				dataToSend.setUsername(clientPlayer.getUsername());
-				dataToSend.setLoginToken(clientPlayer.getLoginToken());
-				dataToSend.setNextRoom(enteredRoom);
-				
-				sendData(dataToSend);
+				clientPlayer.setRoomName(enteredRoom);
+				sendGameAction(GameActionData.GET_STATE, null);
 				// add a waiting screen for players joining?
+			}
+
+			else if (commandDataInput.getCommand().equals("ENTERROOM_NO")
+					|| commandDataInput.getCommand().equals("CREATE_ROOM_NO")) {
+				JOptionPane.showMessageDialog(this,
+						"That room is unavailable. Refresh the lobby and choose another name.",
+						"Room unavailable", JOptionPane.INFORMATION_MESSAGE);
 			}
 
 			else if (commandDataInput.getCommand().equals("ROOMINFO")) {
@@ -1239,50 +1406,33 @@ public class Client extends JApplet {
 			RoomData roomData = (RoomData) dataInput;
 			createRoomScreen((roomData));
 		}
+		if (dataInput instanceof GameStateData) {
+			showGameRoomScreen((GameStateData) dataInput);
+		}
 	}
 
-	private void btnLoginMouseClicked(java.awt.event.MouseEvent evt) {
-		login();
-	}
-
-	private void btnRegisterMouseClicked(java.awt.event.MouseEvent evt) {
-		sendData(new CommandData("REGISTER"));
-		createRegisterScreen();
-	}
-
-	private void btnRegisterUserMouseClicked(java.awt.event.MouseEvent evt) {
-		register();
-	}
-
-	private void btnLobbyChatMouseClicked(java.awt.event.MouseEvent evt) {
-		sendChatData();
-	}
-
-	private void btnLobbyEnterRoomMouseClicked(java.awt.event.MouseEvent evt) {
-		enterRoom();
-	}
-
-	private void btnLobbyCreateRoomMouseClicked(java.awt.event.MouseEvent evt) {
-		createNewRoom();
-	}
-
-	private void btnRoomChatMouseClicked(java.awt.event.MouseEvent evt) {
-		sendChatData();
-	}
-
-	private void btnPlayCardsMouseClicked(java.awt.event.MouseEvent evt) {
-		// TODO add your handling code here:
+	private void playSelectedCards() {
+		ArrayList<Card> selected = new ArrayList<Card>();
+		for (Card card : clientPlayer.getHand()) {
+			if (card.hasBeenClicked()) selected.add(card);
+		}
+		if (selected.isEmpty()) {
+			JOptionPane.showMessageDialog(this, "Click one or more cards first.",
+					"No cards selected", JOptionPane.INFORMATION_MESSAGE);
+			return;
+		}
+		sendGameAction(GameActionData.PLAY, selected);
 	}
 
 	private void createNewRoom() {
 
 		UserCommandData dataOutput = new UserCommandData();
 
-		String newRoomName = JOptionPane.showInputDialog(null,
-				"Enter the room name", "Enter the name of a new room.",
+		String newRoomName = JOptionPane.showInputDialog(this,
+				"Room name:", "Create Room",
 				JOptionPane.QUESTION_MESSAGE);
-
-		clientPlayer.setRoomName(newRoomName);
+		if (newRoomName == null || newRoomName.trim().isEmpty()) return;
+		newRoomName = newRoomName.trim();
 
 		dataOutput.setCommand("CREATE_ROOM");
 		dataOutput.setUsername(clientPlayer.getUsername());
@@ -1296,8 +1446,12 @@ public class Client extends JApplet {
 
 		UserCommandData dataOutput = new UserCommandData();
 
-		String selectedRoom = (String) list.getSelectedValue();
-		clientPlayer.setRoomName(selectedRoom);
+		String selectedRoom = list.getSelectedValue();
+		if (selectedRoom == null) {
+			JOptionPane.showMessageDialog(this, "Select a room first.",
+					"No room selected", JOptionPane.INFORMATION_MESSAGE);
+			return;
+		}
 
 		dataOutput.setCommand("ENTERROOM");
 		dataOutput.setUsername(clientPlayer.getUsername());
@@ -1312,8 +1466,13 @@ public class Client extends JApplet {
 	 */
 	private void login() {
 
-		String username = txtUsername.getText();
+		String username = txtUsername.getText().trim();
 		String password = new String(txtPassword.getPassword());
+		if (username.isEmpty() || password.isEmpty()) {
+			JOptionPane.showMessageDialog(this, "Enter both a username and password.",
+					"Missing login", JOptionPane.INFORMATION_MESSAGE);
+			return;
+		}
 
 		// prepare to send user name and hashed MD5 password to the server
 		UserData data = new UserData(username, MD5.getHash(password));
@@ -1322,20 +1481,30 @@ public class Client extends JApplet {
 		sendData(data);
 	}
 
-	private boolean requiredRegisterFields() {
-		String username = txtRegisterUsername.getText();
-		String email = txtEmail.getText();
-		String firstName = txtFirstName.getText();
-		String birthday = (String) cmbRegisterYear.getSelectedItem()
-				+ "-"
-				+ new Integer(cmbRegisterMonth.getSelectedIndex() + 1)
-						.toString() + "-"
-				+ (String) cmbRegisterDay.getSelectedItem();
+	private String selectedBirthday() {
+		int year = Integer.parseInt((String) cmbRegisterYear.getSelectedItem());
+		int month = cmbRegisterMonth.getSelectedIndex() + 1;
+		int day = Integer.parseInt((String) cmbRegisterDay.getSelectedItem());
+		return String.format("%04d-%02d-%02d", year, month, day);
+	}
 
-		if (username.equals("") || email.equals("") || firstName.equals("")
-				|| birthday.equals(""))
-			return false;
-		return true;
+	private String registrationValidationError() {
+		String username = txtRegisterUsername.getText().trim();
+		String email = txtEmail.getText().trim();
+		String firstName = txtFirstName.getText().trim();
+
+		if (username.isEmpty() || email.isEmpty() || firstName.isEmpty())
+			return "Fields with an * are required!";
+		if (!email.contains("@") || email.startsWith("@") || email.endsWith("@"))
+			return "Please enter a valid email address.";
+		try {
+			java.time.LocalDate birthday = java.time.LocalDate.parse(selectedBirthday());
+			if (birthday.isAfter(java.time.LocalDate.now()))
+				return "Birthday cannot be in the future.";
+		} catch (RuntimeException e) {
+			return "Please enter a valid birthday.";
+		}
+		return null;
 	}
 
 	private void register() {
@@ -1359,22 +1528,18 @@ public class Client extends JApplet {
 				JOptionPane.showMessageDialog(null, "Passwords do not match.",
 						"", JOptionPane.INFORMATION_MESSAGE);
 			}
-		} else if (!requiredRegisterFields()) {
-			JOptionPane.showMessageDialog(null,
-					"Fields with an * are required!", "",
-					JOptionPane.INFORMATION_MESSAGE);
 		} else {
-			dataRegisterUser.setFirstName(txtFirstName.getText());
-			dataRegisterUser.setLastName(txtLastName.getText());
-			dataRegisterUser.setBirthday((String) cmbRegisterYear
-					.getSelectedItem()
-					+ "-"
-					+ new Integer(cmbRegisterMonth.getSelectedIndex() + 1)
-							.toString()
-					+ "-"
-					+ (String) cmbRegisterDay.getSelectedItem());
-			dataRegisterUser.setEmail(txtEmail.getText());
-			dataRegisterUser.setUsername(txtRegisterUsername.getText());
+			String validationError = registrationValidationError();
+			if (validationError != null) {
+				JOptionPane.showMessageDialog(null, validationError, "Sign up",
+						JOptionPane.INFORMATION_MESSAGE);
+				return;
+			}
+			dataRegisterUser.setFirstName(txtFirstName.getText().trim());
+			dataRegisterUser.setLastName(txtLastName.getText().trim());
+			dataRegisterUser.setBirthday(selectedBirthday());
+			dataRegisterUser.setEmail(txtEmail.getText().trim());
+			dataRegisterUser.setUsername(txtRegisterUsername.getText().trim());
 			dataRegisterUser.setPassword(MD5.getHash(new String(
 					txtRegisterPassword.getPassword())));
 			// dataRegisterUser.setPasswordAgain(MD5.getHash(new
@@ -1397,21 +1562,9 @@ public class Client extends JApplet {
 	 *            mouse click action event
 	 */
 	private void cmbRegisterMonthItemStateChanged(java.awt.event.ItemEvent evt) {
-
-		final int FEBRUARY = 1;
-		final int APRIL = 3;
-		final int JUNE = 5;
-		final int SEPTEMBER = 8;
-		final int NOVEMBER = 10;
-		int itemChosen = cmbRegisterMonth.getSelectedIndex();
-
-		if (itemChosen == APRIL || itemChosen == JUNE
-				|| itemChosen == SEPTEMBER || itemChosen == NOVEMBER) {
-			refreshRegisterScreenDays(30);
-		} else if (itemChosen == FEBRUARY) {
-			refreshRegisterScreenDays(28);
-		} else
-			refreshRegisterScreenDays(31);
+		if (evt.getStateChange() == java.awt.event.ItemEvent.SELECTED) {
+			refreshRegisterScreenDays();
+		}
 	}
 
 	/**
@@ -1421,17 +1574,19 @@ public class Client extends JApplet {
 	 * @param days
 	 *            number of days to list
 	 */
-	private void refreshRegisterScreenDays(int days) {
+	private void refreshRegisterScreenDays() {
+		if (cmbRegisterYear.getSelectedItem() == null || cmbRegisterMonth.getSelectedIndex() < 0) return;
+		int year = Integer.parseInt((String) cmbRegisterYear.getSelectedItem());
+		int month = cmbRegisterMonth.getSelectedIndex() + 1;
+		int days = java.time.YearMonth.of(year, month).lengthOfMonth();
+		String selectedDay = (String) cmbRegisterDay.getSelectedItem();
 		cmbRegisterDay.removeAllItems();
 		for (int i = 1; i <= days; i++) {
-			cmbRegisterDay.addItem(new Integer(i).toString());
+			cmbRegisterDay.addItem(Integer.toString(i));
 		}
-	}
-
-	public void paint(Graphics g) {
-		invalidate();
-		validate();
-		super.paint(g);
+		if (selectedDay != null && Integer.parseInt(selectedDay) <= days) {
+			cmbRegisterDay.setSelectedItem(selectedDay);
+		}
 	}
 
 }

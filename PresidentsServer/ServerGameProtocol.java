@@ -1,100 +1,89 @@
 package PresidentsServer;
 
 import java.util.ArrayList;
+import java.util.List;
 import java.util.Random;
 
-import PresidentsData.CommandData;
-import PresidentsData.Data;
-import PresidentsData.RoomData;
-import PresidentsData.UserCommandData;
-import PresidentsPlayer.Card;
+import PresidentsData.GameActionData;
+import PresidentsData.GameStateData;
 import PresidentsPlayer.Hand;
-import PresidentsPlayer.Players;
+import PresidentsPlayer.PresidentsGame;
 
-public class ServerGameProtocol {
-
-	private GameRoom gameRoom;
-	private ArrayList<Card> deck;
-	private int state;
-
-	private ServerGameProtocol() {
-		deck = new ArrayList<Card>(52);
-		makeDeck();
-		shuffleDeck();
-	}
+/** Connects a room to the server-authoritative Presidents rules engine. */
+public final class ServerGameProtocol {
+	private final GameRoom gameRoom;
+	private PresidentsGame game;
 
 	public ServerGameProtocol(GameRoom gameRoom) {
-		this();
 		this.gameRoom = gameRoom;
-		state = 0;
 	}
 
-	/*public Data processInput(Data dataInput) {
-		Data dataOutput = null;
-		if (((CommandData) dataInput).getCommand().equals("GETROOMINFO")) {
-			RoomData roomData = new RoomData();
-			
+	public synchronized void process(GameActionData action, String username) {
+		if (action == null || action.getCommand() == null) {
+			throw new IllegalArgumentException("Missing game action");
 		}
-		return dataOutput;
-	}*/
-
-	public Data processInput(UserCommandData dataInput, String username) {
-		RoomData dataOutput = null;
-		if (dataInput.getCommand().equals("GETROOMINFO")) {
-			System.out.println("Room size is: " + gameRoom.getSize());
-			Hand hand = new Hand();
-			for(int i=0;i<13;i++) {
-				Card card = deck.remove(0);
-				hand.addCard(card);
-			}
-			gameRoom.dealHandToPlayer(hand,username);
-			while(gameRoom.getSize()!=2) {
-				// don't do anything
-			}
-			dataOutput = new RoomData();
-			dataOutput.setHand(hand);
-			dataOutput.setPlayerNames(gameRoom.getPlayerNames());
-		}
-		return dataOutput;
-	}
-
-	/**
-	 * Fill the deck with all possible card values of a standard 52 card deck.
-	 */
-	private void makeDeck() {
-		for (int i = 1; i <= 13; i++) {
-			for (int j = 0; j < 4; j++) {
-				deck.add(new Card(i, j));
-			}
+		switch (action.getCommand()) {
+		case GameActionData.START:
+			startGame();
+			break;
+		case GameActionData.PLAY:
+			requireGame().play(username, action.getCards());
+			break;
+		case GameActionData.PASS:
+			requireGame().pass(username);
+			break;
+		case GameActionData.GET_STATE:
+			break;
+		default:
+			throw new IllegalArgumentException("Unknown game action");
 		}
 	}
 
-	/**
-	 * Shuffles the deck of cards by randomly swapping cards within the deck.
-	 */
-	private void shuffleDeck() {
-
-		Random generator = new Random();
-		int j, k;
-
-		for (int i = 0; i < 52; i++) {
-			j = generator.nextInt(52);
-			k = generator.nextInt(52);
-			Card temp = deck.get(j);
-			deck.set(j, deck.get(k));
-			deck.set(k, temp);
+	private void startGame() {
+		if (game != null && game.getStatus() != PresidentsGame.Status.WAITING) {
+			throw new IllegalStateException("The game has already started");
 		}
+		List<String> players = gameRoom.getPlayerNames();
+		if (players.size() < 2) {
+			throw new IllegalStateException("At least two players are required to start");
+		}
+		if (players.size() > 7) {
+			throw new IllegalStateException("A game supports at most seven players");
+		}
+		game = new PresidentsGame(players);
+		game.start(new Random());
+		for (String player : players) gameRoom.dealHandToPlayer(game.getHand(player), player);
 	}
 
-	/**
-	 * @return each card in the deck printed sequentially
-	 */
-	@Override
-	public String toString() {
-		String cardDeck = "";
-		for (Card card : deck) {
-			cardDeck += card + " ";
+	public synchronized boolean canJoin() {
+		return gameRoom.getSize() < 7
+				&& (game == null || game.getStatus() == PresidentsGame.Status.WAITING);
+	}
+
+	public synchronized GameStateData snapshotFor(String username, String message) {
+		ArrayList<String> players = gameRoom.getPlayerNames();
+		ArrayList<Integer> counts = new ArrayList<Integer>();
+		for (String player : players) {
+			counts.add(game == null ? 0 : game.getHand(player).getSize());
 		}
-		return cardDeck;
+		String status = game == null ? PresidentsGame.Status.WAITING.name()
+				: game.getStatus().name();
+		String current = game == null || game.getStatus() == PresidentsGame.Status.WAITING
+				? null : game.getCurrentPlayer();
+		Hand hand = game == null ? new Hand() : game.getHand(username);
+		int count = game == null ? 0 : game.getCardsInPlay();
+		int value = game == null ? 0 : game.getValueInPlay();
+		List<String> finishOrder = game == null ? List.of() : game.getFinishOrder();
+		return new GameStateData(gameRoom.getName(), status, current, count, value,
+				hand, players, counts, finishOrder, message);
+	}
+
+	public synchronized PresidentsGame.Status getStatus() {
+		return game == null ? PresidentsGame.Status.WAITING : game.getStatus();
+	}
+
+	private PresidentsGame requireGame() {
+		if (game == null) throw new IllegalStateException("Start the game first");
+		return game;
 	}
 }

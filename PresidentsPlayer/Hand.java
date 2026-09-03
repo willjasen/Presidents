@@ -43,12 +43,7 @@ public class Hand implements Serializable, Iterable<Card> {
 	 *            card to remove
 	 */
 	public void removeCard(Card card) {
-		int i;
-		for (i = 0; i < cards.size(); i++) {
-			if (getCard(i).getValue() == card.getValue()) {
-				cards.remove(i);
-			}
-		}
+		cards.remove(card);
 	}
 
 	public void removeCard(int index) {
@@ -65,6 +60,14 @@ public class Hand implements Serializable, Iterable<Card> {
 
 	public int indexOf(Card card) {
 		return cards.indexOf(card);
+	}
+
+	public boolean contains(Card card) {
+		return cards.contains(card);
+	}
+
+	public ArrayList<Card> asList() {
+		return new ArrayList<Card>(cards);
 	}
 
 	@Override

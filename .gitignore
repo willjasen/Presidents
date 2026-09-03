@@ -1,0 +1,13 @@
+target/
+data/
+*.log
+.DS_Store
+.idea/
+*.iml
+.classpath
+.project
+.settings/
+node_modules/
+dist/
+.env
+.netlify/

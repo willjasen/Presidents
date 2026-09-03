@@ -3,6 +3,7 @@ package PresidentsClient;
 import java.io.IOException;
 import java.net.Socket;
 import PresidentsData.Data;
+import javax.swing.SwingUtilities;
 
 public class ClientGameThread implements Runnable {
 
@@ -36,7 +37,8 @@ public class ClientGameThread implements Runnable {
 		// while the connection isn't closed and there is data, process
 		// it and send info to client
 		while (!clientGameSock.isClosed() && (dataInput = getData()) != null) {
-			clientInstance.handleReceivedGameData(dataInput);
+			Data received = dataInput;
+			SwingUtilities.invokeLater(() -> clientInstance.handleReceivedGameData(received));
 		}
 	}
 		

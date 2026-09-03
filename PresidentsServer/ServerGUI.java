@@ -28,18 +28,11 @@ public class ServerGUI extends JFrame implements ActionListener{
 	
 	private JTextArea txtArea;
 	
-	JMenuBar menuBar;
-	JMenu menu, submenu;
-	JMenuItem menuItem;
-	JMenuItem menuItemAbout;
-	JRadioButtonMenuItem rbMenuItem;
-	JCheckBoxMenuItem cbMenuItem;
-	
+
 	public ServerGUI() {
-		
-		setupMainScreen();
 		serverInstance = new Server(this);
-		serverInstance.startServer();
+		setupMainScreen();
+		startServerInBackground();
 	}
 	
 	public ServerGUI(String title) {
@@ -48,80 +41,35 @@ public class ServerGUI extends JFrame implements ActionListener{
 	}
 	
 	private void createMenuBar() {
+		JMenuBar menuBar = new JMenuBar();
+		JMenu serverMenu = new JMenu("Server");
+		serverMenu.setMnemonic(KeyEvent.VK_S);
 
-		// Create the menu bar.
-		menuBar = new JMenuBar();
+		JMenuItem startItem = new JMenuItem("Start");
+		startItem.addActionListener(event -> startServerInBackground());
+		serverMenu.add(startItem);
 
-		// Build the first menu.
-		menu = new JMenu("Game");
-		menu.setMnemonic(KeyEvent.VK_A);
-		menu.getAccessibleContext().setAccessibleDescription(
-				"The only menu in this program that has menu items");
-		menuBar.add(menu);
+		JMenuItem stopItem = new JMenuItem("Stop");
+		stopItem.addActionListener(event -> serverInstance.stopServer());
+		serverMenu.add(stopItem);
+		serverMenu.addSeparator();
 
-		// a group of JMenuItems
-		menuItem = new JMenuItem("A text-only menu item", KeyEvent.VK_T);
-		menuItem.setAccelerator(KeyStroke.getKeyStroke(KeyEvent.VK_1,
-				ActionEvent.ALT_MASK));
-		menuItem.getAccessibleContext().setAccessibleDescription(
-				"This doesn't really do anything");
-		menu.add(menuItem);
+		JMenuItem exitItem = new JMenuItem("Exit");
+		exitItem.addActionListener(event -> {
+			serverInstance.stopServer();
+			dispose();
+		});
+		serverMenu.add(exitItem);
+		menuBar.add(serverMenu);
 
-		menuItem = new JMenuItem("Both text and icon", new ImageIcon(
-				"images/middle.gif"));
-		menuItem.setMnemonic(KeyEvent.VK_B);
-		menu.add(menuItem);
-
-		menuItem = new JMenuItem(new ImageIcon("images/middle.gif"));
-		menuItem.setMnemonic(KeyEvent.VK_D);
-		menu.add(menuItem);
-
-		// a group of radio button menu items
-		menu.addSeparator();
-		ButtonGroup group = new ButtonGroup();
-		rbMenuItem = new JRadioButtonMenuItem("A radio button menu item");
-		rbMenuItem.setSelected(true);
-		rbMenuItem.setMnemonic(KeyEvent.VK_R);
-		group.add(rbMenuItem);
-		menu.add(rbMenuItem);
-
-		rbMenuItem = new JRadioButtonMenuItem("Another one");
-		rbMenuItem.setMnemonic(KeyEvent.VK_O);
-		group.add(rbMenuItem);
-		menu.add(rbMenuItem);
-
-		// a group of check box menu items
-		menu.addSeparator();
-		cbMenuItem = new JCheckBoxMenuItem("A check box menu item");
-		cbMenuItem.setMnemonic(KeyEvent.VK_C);
-		menu.add(cbMenuItem);
-
-		cbMenuItem = new JCheckBoxMenuItem("Another one");
-		cbMenuItem.setMnemonic(KeyEvent.VK_H);
-		menu.add(cbMenuItem);
-
-		// a submenu
-		menu.addSeparator();
-		submenu = new JMenu("A submenu");
-		submenu.setMnemonic(KeyEvent.VK_S);
-
-		menuItem = new JMenuItem("An item in the submenu");
-		menuItem.setAccelerator(KeyStroke.getKeyStroke(KeyEvent.VK_2,
-				ActionEvent.ALT_MASK));
-		submenu.add(menuItem);
-
-		menuItem = new JMenuItem("Another item");
-		submenu.add(menuItem);
-		menu.add(submenu);
-
-		// Build second menu in the menu bar.
-		menu = new JMenu("About");
-		menu.setMnemonic(KeyEvent.VK_N);
-		menu.getAccessibleContext().setAccessibleDescription(
-				"This menu does nothing");
-		menuBar.add(menu);
-
-		this.setJMenuBar(menuBar);
+		JMenu helpMenu = new JMenu("Help");
+		JMenuItem aboutItem = new JMenuItem("About Presidents");
+		aboutItem.addActionListener(event -> JOptionPane.showMessageDialog(this,
+				"Presidents — also commonly known as Asshole",
+				"About Presidents", JOptionPane.INFORMATION_MESSAGE));
+		helpMenu.add(aboutItem);
+		menuBar.add(helpMenu);
+		setJMenuBar(menuBar);
 	}
 	
 	private void setupMainScreen() {
@@ -168,7 +116,13 @@ public class ServerGUI extends JFrame implements ActionListener{
 	}
 	
 	public void writeToTextArea(String text) {
-		txtArea.append(text);
+		SwingUtilities.invokeLater(() -> txtArea.append(text));
+	}
+
+	private void startServerInBackground() {
+		Thread serverThread = new Thread(serverInstance::startServer, "presidents-server");
+		serverThread.setDaemon(true);
+		serverThread.start();
 	}
 	
 	public void actionPerformed(ActionEvent evt) {
@@ -176,7 +130,7 @@ public class ServerGUI extends JFrame implements ActionListener{
 		Object obj = evt.getSource();
 
 		if (obj.equals(btnStartServer)) {
-			serverInstance.startServer();
+			startServerInBackground();
 			repaint();
 		} else if (obj.equals(btnStopServer)) {
 			serverInstance.stopServer();

@@ -2,6 +2,7 @@ package PresidentsData;
 
 import java.security.*;
 import java.math.*;
+import java.nio.charset.StandardCharsets;
 
 //used to hash passwords before they are sent to the server
 
@@ -31,9 +32,9 @@ public class MD5 {
 			return null;
 		}
 
-		m.update(input.getBytes(), 0, input.length());
+		m.update(input.getBytes(StandardCharsets.UTF_8));
 
 		// return a string of 32 hex characters
-		return new BigInteger(1, m.digest()).toString(16);
+		return String.format("%032x", new BigInteger(1, m.digest()));
 	}
 }

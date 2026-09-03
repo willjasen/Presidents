@@ -3,9 +3,6 @@ package PresidentsServer;
 import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.Iterator;
-import java.util.Map;
-import java.util.Set;
-import java.util.Map.Entry;
 
 import PresidentsPlayer.Player;
 
@@ -35,6 +32,12 @@ public class GameRooms implements Iterable<GameRoom> {
 	 *            - create a new game room
 	 */
 	public synchronized void createRoom(String gameRoom) {
+		if (gameRoom == null || gameRoom.trim().isEmpty()) {
+			throw new IllegalArgumentException("Room name cannot be blank");
+		}
+		if (gameRooms.containsKey(gameRoom)) {
+			throw new IllegalArgumentException("A room with that name already exists");
+		}
 		gameRooms.put(gameRoom, new GameRoom(gameRoom));
 	}
 
@@ -58,16 +61,9 @@ public class GameRooms implements Iterable<GameRoom> {
 	 * @return list of room names
 	 */
 	public synchronized ArrayList<String> getRoomNames() {
-		ArrayList<String> roomNames = new ArrayList<String>();
-		Set rooms = gameRooms.entrySet();
-		Iterator<Map.Entry> i = rooms.iterator();
-
-		while (i.hasNext()) {
-			Map.Entry me = i.next();
-			roomNames.add((String) me.getKey());
-		}
-
+		ArrayList<String> roomNames = new ArrayList<String>(gameRooms.keySet());
 		roomNames.remove("Lobby");
+		roomNames.sort(String.CASE_INSENSITIVE_ORDER);
 		return roomNames;
 	}
 
@@ -80,9 +76,8 @@ public class GameRooms implements Iterable<GameRoom> {
 	}
 
 	@Override
-	public Iterator<GameRoom> iterator() {
-		Set rooms = gameRooms.entrySet();
-		return rooms.iterator();
+	public synchronized Iterator<GameRoom> iterator() {
+		return new ArrayList<GameRoom>(gameRooms.values()).iterator();
 	}
 
 	public boolean containsRoom(String roomName) {

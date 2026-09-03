@@ -5,6 +5,8 @@ import java.io.ObjectInputStream;
 import java.net.Socket;
 
 import PresidentsData.ChatData;
+import PresidentsData.SafeObjectInput;
+import PresidentsPlayer.Human;
 
 public class ServerChatThread implements Runnable {
 
@@ -17,14 +19,17 @@ public class ServerChatThread implements Runnable {
 
 	private Server serverInstance;
 	private Socket clientChatSock;
+	private Human player;
+	private ObjectInputStream input;
 
 	public ServerChatThread() {
 
 	}
 
-	public ServerChatThread(Socket clientChatSock, Server serverInstance) {
+	public ServerChatThread(Socket clientChatSock, Server serverInstance, Human player) {
 		this.clientChatSock = clientChatSock;
 		this.serverInstance = serverInstance;
+		this.player = player;
 	}
 
 	public Server getServerInstance() {
@@ -50,32 +55,18 @@ public class ServerChatThread implements Runnable {
 		// while the connection isn't closed and there is data, process
 		// it and send info to client
 		while (!clientChatSock.isClosed() && (dataInput = getData()) != null) {
-			serverInstance.handleReceivedChatData(dataInput);
+			serverInstance.handleReceivedChatData(player, dataInput);
 		}
 	}
 
 	public ChatData getData() {
 		ChatData data = null;
-		ObjectInputStream inFromClient = null;
-
 		if (!clientChatSock.isClosed()) {
 			try {
-				// Get reader for the socket, and then read a line from
-				// the socket
-				inFromClient = new ObjectInputStream(clientChatSock
-						.getInputStream());
-				try {
-					data = (ChatData) inFromClient.readObject();
-				} catch (Exception e) {
-					System.out.println("Error reading from a chat socket.");
-					serverInstance.logOutput(
-							"Error reading from a chat socket.", ERROR_LOG);
-					serverInstance.removePlayer(clientChatSock);
-				}
+				if (input == null) input = SafeObjectInput.open(clientChatSock.getInputStream());
+				data = (ChatData) input.readObject();
 			} catch (Exception e) {
-				serverInstance.logOutput(
-						"Error reading from a chat socket 2.", ERROR_LOG);
-				// serverInstance.removePlayer(clientChatSock);
+				return null;
 			}
 		} else {
 			// remove the player

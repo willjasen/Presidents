@@ -1,6 +1,7 @@
 package PresidentsPlayer;
 
 import java.io.Serializable;
+import java.util.Objects;
 
 import javax.swing.JLabel;
 
@@ -162,8 +163,8 @@ public class Card implements Serializable {
 	/**
 	 * Used for the GUI.
 	 */
-	private JLabel cardLabel;
-	private boolean clicked = false;
+	private transient JLabel cardLabel;
+	private transient boolean clicked = false;
 
 	private Card() {
 		faceValue = 0;
@@ -241,10 +242,22 @@ public class Card implements Serializable {
 	 *            character of the represented suit
 	 */
 	public void setSuit(char suit) {
-		if (suit == 'c' || suit == 'h' || suit == 's' || suit == 'd')
-			this.suit = suit;
-		else
-			System.out.println("Cannot set suit - incorrect suit.");
+		switch (suit) {
+		case 'c':
+			this.suit = CLUBS;
+			break;
+		case 'h':
+			this.suit = HEARTS;
+			break;
+		case 's':
+			this.suit = SPADES;
+			break;
+		case 'd':
+			this.suit = DIAMONDS;
+			break;
+		default:
+			throw new IllegalArgumentException("Suit must be c, h, s, or d");
+		}
 	}
 
 	public void switchClicked() {
@@ -258,5 +271,18 @@ public class Card implements Serializable {
 	public String toString() {
 		// return the card's value and a space
 		return String.valueOf(faceValue) + String.valueOf(getSuitFromInt());
+	}
+
+	@Override
+	public boolean equals(Object other) {
+		if (this == other) return true;
+		if (!(other instanceof Card)) return false;
+		Card card = (Card) other;
+		return faceValue == card.faceValue && suit == card.suit;
+	}
+
+	@Override
+	public int hashCode() {
+		return Objects.hash(faceValue, suit);
 	}
 }
