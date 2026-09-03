@@ -409,6 +409,12 @@ elements.hand.addEventListener('click', (event) => {
   if (selected.has(id)) {
     selected.delete(id);
   } else {
+    const card = game.hands[0].find((handCard) => handCard.id === id);
+    const selectedCard = selectedCards()[0];
+    if (selectedCard && card && card.value !== selectedCard.value) {
+      showToast('Choose cards of the same rank');
+      return;
+    }
     selected.add(id);
   }
   saveGame();
