@@ -19,13 +19,11 @@ uses `netlify.toml` to build the app and its account function.
    Functions. Do not commit the real value.
 3. Run `npm run db:setup` once with that same `DATABASE_URL` to create the
    account, passkey, game-history, and leaderboard tables.
-4. Add `dt-is-scum.willjasen.com` as the production custom domain in Netlify.
-5. At the DNS provider for `willjasen.com`, add the CNAME target Netlify shows
-   for that custom domain. Wait for Netlify to issue the HTTPS certificate
-   before testing account creation or sign-in.
+4. Use `scummie.netlify.app` as the production site domain in Netlify. Wait
+   for HTTPS to be active before testing account creation or sign-in.
 
 The production WebAuthn settings are already scoped in `netlify.toml` to
-`dt-is-scum.willjasen.com` and `https://dt-is-scum.willjasen.com`. Deploy
+`scummie.netlify.app` and `https://scummie.netlify.app`. Deploy
 previews intentionally derive their own relying-party settings from the request
 hostname. If the production hostname changes later, update both values together;
 existing passkeys are bound to the hostname on which they were created.
