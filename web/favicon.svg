@@ -1,9 +1,9 @@
 <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 64 64" role="img" aria-labelledby="title desc">
   <title id="title">Presidents card game</title>
-  <desc id="desc">A gold playing card with a P and crown on a deep green background</desc>
+  <desc id="desc">A gold playing card with an S and crown on a deep green background</desc>
   <rect width="64" height="64" rx="14" fill="#061914"/>
   <rect x="13" y="8" width="38" height="48" rx="7" fill="#0b4939" stroke="#e8c66a" stroke-width="2.5" transform="rotate(-5 32 32)"/>
   <path d="m23 21 5 5 4-7 4 7 5-5-1.5 9h-15z" fill="#e8c66a"/>
-  <path d="M25 34v14M25 34h7.5c4 0 6-2.2 6-5.5s-2-5.5-6-5.5H25M32 34l7 14" fill="none" stroke="#f6f2e9" stroke-linecap="round" stroke-linejoin="round" stroke-width="3.5"/>
+  <path d="M40 25c-2-2-4.1-2.8-6.8-2.8-4.5 0-7.2 2.2-7.2 5.2 0 3.3 2.8 4.4 7 5.7 4.5 1.4 7 2.6 7 5.8 0 3.2-2.9 5.2-7.5 5.2-2.9 0-5.6-.9-7.5-2.8" fill="none" stroke="#f6f2e9" stroke-linecap="round" stroke-linejoin="round" stroke-width="3.5"/>
   <circle cx="47" cy="48" r="2.5" fill="#bd3f45"/>
 </svg>
