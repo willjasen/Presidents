@@ -299,7 +299,7 @@ dialog::backdrop { background: rgba(1, 12, 9, .78); backdrop-filter: blur(4px); 
     letter-spacing: .06em;
     white-space: nowrap;
   }
-  .play-area { transform: translate(-50%, -42%); }
+  .play-area { top: 56%; transform: translate(-50%, -35%); }
   .pile { min-height: 118px; }
   .you-badge { bottom: 12px; }
   .hand-panel { padding: 18px 14px 24px; }
@@ -321,7 +321,7 @@ dialog::backdrop { background: rgba(1, 12, 9, .78); backdrop-filter: blur(4px); 
 }
 
 @media (max-width: 420px) {
-  .play-area { transform: translate(-50%, -48%); }
+  .play-area { top: 56%; transform: translate(-50%, -35%); }
   .turn-banner.new-round { bottom: 158px; }
   .round-start-pile { width: 104px; height: 124px; }
   .round-start-pile strong { font-size: 16px; }
