@@ -47,6 +47,7 @@ let pendingGameSync;
 let soundOn = true;
 let sessionToken = localStorage.getItem('presidents_session');
 let profile = null;
+let pendingLoginOptions;
 
 function humanPlayerName() {
   return profile?.username || 'You';
@@ -505,7 +506,15 @@ document.querySelector('#sound-button').addEventListener('click', (event) => {
   event.currentTarget.style.opacity = soundOn ? '1' : '.45';
 });
 
-elements.accountButton.addEventListener('click', () => elements.authDialog.showModal());
+elements.accountButton.addEventListener('click', () => {
+  elements.authDialog.showModal();
+  // Safari requires navigator.credentials.get() to happen very close to the
+  // user's tap. Fetch the challenge while the account sheet is open so the
+  // sign-in button can start the ceremony without another await beforehand.
+  if (!profile && !pendingLoginOptions) {
+    pendingLoginOptions = api('login-options').catch(() => null);
+  }
+});
 document.querySelector('#auth-close').addEventListener('click', () => elements.authDialog.close());
 document.querySelector('#signout-button').addEventListener('click', () => {
   localStorage.removeItem('presidents_session');
@@ -564,10 +573,15 @@ document.querySelector('#signin-button').addEventListener('click', async () => {
   try {
     setAuthStatus('Choose your scummie passkey…');
     const { startAuthentication } = await loadWebAuthn();
-    const start = await api('login-options');
+    const start = await (pendingLoginOptions || api('login-options'));
+    pendingLoginOptions = undefined;
+    if (!start) throw new Error('The sign-in request could not be prepared. Please try again.');
     const credential = await startAuthentication({ optionsJSON: start.options });
     acceptSession(await api('login-verify', { challengeId: start.challengeId, credential }));
-  } catch (error) { setAuthStatus(error.message, true); }
+  } catch (error) {
+    pendingLoginOptions = undefined;
+    setAuthStatus(error.message, true);
+  }
 });
 
 function acceptSession(result) {
