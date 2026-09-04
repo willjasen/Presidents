@@ -33,6 +33,9 @@ const elements = {
   leaderboardButton: document.querySelector('#leaderboard-button'),
   leaderboardDialog: document.querySelector('#leaderboard-dialog'),
   leaderboardTable: document.querySelector('#leaderboard-table'),
+  roundResultsDialog: document.querySelector('#round-results-dialog'),
+  roundResultsTable: document.querySelector('#round-results-table'),
+  roundResultsIntro: document.querySelector('#round-results-intro'),
 };
 
 let game;
@@ -113,6 +116,7 @@ function newGame() {
   const hands = Array.from({ length: playerCount }, () => []);
   shuffle(createDeck()).forEach((card, index) => hands[index % playerCount].push(card));
   hands.forEach((hand) => hand.sort((a, b) => a.value - b.value || a.suitKey.localeCompare(b.suitKey)));
+  applyTitleExchange(hands);
   const openingPlayer = hands.findIndex((hand) => hand.some((card) => card.id === '0-0'));
   game = {
     hands, current: openingPlayer, cardsInPlay: 0, valueInPlay: -1, trickLeader: null,
@@ -126,6 +130,19 @@ function newGame() {
   render();
   showToast(openingPlayer === 0 ? 'You hold the 3 of clubs. You lead!' : `${players[openingPlayer]} holds the 3 of clubs.`);
   queueBotTurn();
+}
+
+function applyTitleExchange(hands) {
+  const order = game?.status === 'finished' ? game.finishOrder : null;
+  if (!order || order.length !== players.length) return;
+  const exchanges = players.length >= 4 ? [[0, players.length - 1, 2], [1, players.length - 2, 1]] : [[0, players.length - 1, 1]];
+  exchanges.forEach(([giverPlace, receiverPlace, count]) => {
+    const giver = order[giverPlace]; const receiver = order[receiverPlace];
+    const outgoing = hands[giver].slice(-count); const incoming = hands[receiver].slice(0, count);
+    hands[giver] = hands[giver].filter((card) => !outgoing.includes(card)).concat(incoming);
+    hands[receiver] = hands[receiver].filter((card) => !incoming.includes(card)).concat(outgoing);
+  });
+  hands.forEach((hand) => hand.sort((a, b) => a.value - b.value || a.suitKey.localeCompare(b.suitKey)));
 }
 
 function endGame() {
@@ -371,7 +388,14 @@ function queueBotTurn() {
 async function finishGame() {
   const place = game.finishOrder.indexOf(0) + 1;
   showToast(place === 1 ? 'You’re the President!' : `You finished as ${placeName(place)}.`);
+  showRoundResults();
   await syncFinishedGame();
+}
+
+function showRoundResults() {
+  elements.roundResultsIntro.textContent = 'These titles determine the card exchange in the next game.';
+  elements.roundResultsTable.innerHTML = `<div class="leaderboard-row header"><span>#</span><span>Player</span><span class="leaderboard-stat">Title</span></div>${game.finishOrder.map((index, place) => `<div class="leaderboard-row ${index === 0 ? 'is-you' : ''}"><span class="leaderboard-rank">${place + 1}</span><span class="leaderboard-name">${escapeHtml(players[index])}${index === 0 ? ' · You' : ''}</span><span class="leaderboard-stat">${placeName(place + 1)}</span></div>`).join('')}`;
+  elements.roundResultsDialog.showModal();
 }
 
 async function syncFinishedGame() {
@@ -430,7 +454,8 @@ elements.hand.addEventListener('click', (event) => {
 elements.playButton.addEventListener('click', () => playCards(0, selectedCards()));
 elements.passButton.addEventListener('click', () => pass(0));
 elements.endGameButton.addEventListener('click', endGame);
-elements.newGameButton.addEventListener('click', newGame);
+elements.newGameButton.addEventListener('click', () => game.status === 'finished' ? showRoundResults() : newGame());
+document.querySelector('#start-next-game').addEventListener('click', () => { elements.roundResultsDialog.close(); newGame(); });
 document.querySelector('#rules-button').addEventListener('click', () => elements.rulesDialog.showModal());
 document.querySelector('#rules-close').addEventListener('click', () => elements.rulesDialog.close());
 document.querySelector('#rules-done').addEventListener('click', () => elements.rulesDialog.close());

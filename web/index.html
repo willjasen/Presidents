@@ -145,6 +145,13 @@
       </div>
     </dialog>
 
+    <dialog id="round-results-dialog" class="leaderboard-dialog">
+      <div class="dialog-head"><div><p class="eyebrow">ROUND COMPLETE</p><h2>Leaderboard</h2></div></div>
+      <p class="leaderboard-intro" id="round-results-intro">Titles are set for the next game.</p>
+      <div class="leaderboard-table" id="round-results-table"></div>
+      <button class="play-button dialog-done" id="start-next-game" type="button">Start next game <span aria-hidden="true">→</span></button>
+    </dialog>
+
     <div class="toast" id="toast" role="alert" aria-live="assertive"></div>
     <script src="vendor/simplewebauthn-browser.umd.min.js"></script>
     <script type="module" src="app.js?v=11"></script>
