@@ -11,7 +11,7 @@
 [context.production.environment]
   WEBAUTHN_RP_ID = "scummie.netlify.app"
   WEBAUTHN_ORIGIN = "https://scummie.netlify.app"
-  WEBAUTHN_RP_NAME = "Presidents"
+  WEBAUTHN_RP_NAME = "scummie"
 
 [functions]
   directory = "netlify/functions"

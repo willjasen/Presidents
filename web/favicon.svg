@@ -1,5 +1,5 @@
 <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 64 64" role="img" aria-labelledby="title desc">
-  <title id="title">Presidents card game</title>
+  <title id="title">scummie card game</title>
   <desc id="desc">A gold playing card with an S and crown on a deep green background</desc>
   <rect width="64" height="64" rx="14" fill="#061914"/>
   <rect x="13" y="8" width="38" height="48" rx="7" fill="#0b4939" stroke="#e8c66a" stroke-width="2.5" transform="rotate(-5 32 32)"/>

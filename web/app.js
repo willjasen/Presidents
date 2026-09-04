@@ -562,7 +562,7 @@ document.querySelector('#register-button').addEventListener('click', async () =>
 
 document.querySelector('#signin-button').addEventListener('click', async () => {
   try {
-    setAuthStatus('Choose your Presidents passkey…');
+    setAuthStatus('Choose your scummie passkey…');
     const { startAuthentication } = await loadWebAuthn();
     const start = await api('login-options');
     const credential = await startAuthentication({ optionsJSON: start.options });

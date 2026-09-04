@@ -37,7 +37,7 @@ function relyingParty(request) {
   const requestUrl = new URL(request.url);
   const origin = (process.env.WEBAUTHN_ORIGIN || requestUrl.origin).replace(/\/$/, '');
   const rpID = process.env.WEBAUTHN_RP_ID || new URL(origin).hostname;
-  return { origin, rpID, rpName: process.env.WEBAUTHN_RP_NAME || 'Presidents' };
+  return { origin, rpID, rpName: process.env.WEBAUTHN_RP_NAME || 'scummie' };
 }
 
 function hashToken(value) {
@@ -222,7 +222,7 @@ async function loginVerify(sql, body, rp) {
     LEFT JOIN game_stats g ON g.user_id = u.id
     WHERE p.credential_id = ${body.credential?.id} LIMIT 1`;
   const passkey = rows[0];
-  if (!passkey) return json({ error: 'This passkey is not registered for Presidents.' }, 404);
+  if (!passkey) return json({ error: 'This passkey is not registered for scummie.' }, 404);
 
   const verification = await verifyAuthenticationResponse({
     response: body.credential,

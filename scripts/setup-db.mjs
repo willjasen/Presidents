@@ -19,4 +19,4 @@ else {
   for (const statement of statements) await sql.query(statement);
 }
 if (isLocal) await sql.end();
-console.log('Presidents database is ready.');
+console.log('scummie database is ready.');

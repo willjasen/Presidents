@@ -63,5 +63,5 @@ const server = createServer(async (request, response) => {
 });
 
 server.listen(port, '127.0.0.1', () => {
-  console.log(`Presidents local deployment: http://localhost:${port}`);
+  console.log(`scummie local deployment: http://localhost:${port}`);
 });
