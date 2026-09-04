@@ -5,6 +5,7 @@ await rm('dist', { recursive: true, force: true });
 await mkdir('dist', { recursive: true });
 await cp('web/index.html', 'dist/index.html');
 await cp('web/styles.css', 'dist/styles.css');
+await cp('web/favicon.svg', 'dist/favicon.svg');
 await cp('web/vendor', 'dist/vendor', { recursive: true });
 await build({
   entryPoints: ['web/app.js'],
