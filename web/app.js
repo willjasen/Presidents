@@ -43,6 +43,7 @@ let selected = new Set();
 let botTimer;
 let syncRetryTimer;
 let syncInFlight = false;
+let pendingGameSync;
 let soundOn = true;
 let sessionToken = localStorage.getItem('presidents_session');
 let profile = null;
@@ -424,18 +425,17 @@ function showRoundResults() {
 }
 
 async function syncFinishedGame() {
-  if (!sessionToken || game?.status !== 'finished' || game.recorded || syncInFlight) return;
-  clearTimeout(syncRetryTimer);
-  syncInFlight = true;
-  const place = game.finishOrder.indexOf(0) + 1;
-  try {
-    await api('save-game', {
+  if (!sessionToken || syncInFlight) return;
+  if (!pendingGameSync) {
+    if (game?.status !== 'finished' || game.recorded) return;
+    const place = game.finishOrder.indexOf(0) + 1;
+    pendingGameSync = {
       gameId: game.id,
       startedAt: game.startedAt,
       completedAt: game.completedAt || new Date().toISOString(),
       playerCount: players.length,
       finishPlace: place,
-      finishOrder: game.finishOrder,
+      finishOrder: [...game.finishOrder],
       rules: { version: 1, threesLow: true, twosHigh: true, twosClear: true, equalRanksAllowed: true, responseCount: 'at-least' },
       players: players.map((name, seat) => ({
         seat,
@@ -445,9 +445,18 @@ async function syncFinishedGame() {
         finishPlace: game.finishOrder.indexOf(seat) + 1,
       })),
       actions: game.history || [],
-    });
-    game.recorded = true;
-    saveGame();
+    };
+  }
+  clearTimeout(syncRetryTimer);
+  syncInFlight = true;
+  try {
+    const savedGameId = pendingGameSync.gameId;
+    await api('save-game', pendingGameSync);
+    if (game?.id === savedGameId) {
+      game.recorded = true;
+      saveGame();
+    }
+    pendingGameSync = null;
     await loadProfile();
   } catch {
     showToast('Game saved on this device; database sync will retry after sign-in.');
