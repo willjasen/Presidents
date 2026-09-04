@@ -279,7 +279,12 @@ dialog::backdrop { background: rgba(1, 12, 9, .78); backdrop-filter: blur(4px); 
 .toast.show { opacity: 1; transform: translate(-50%, 0); }
 
 @media (max-width: 700px) {
-  .topbar { height: 60px; }
+  .topbar { height: 60px; padding-inline: 14px; }
+  .brand { gap: 9px; font-size: 20px; }
+  .brand-mark { width: 30px; height: 36px; font-size: 18px; }
+  .topbar-actions { gap: 8px; }
+  .account-button { min-height: 38px; padding-inline: 11px; }
+  .icon-button { width: 38px; height: 38px; }
   .text-button { display: none; }
   .game { min-height: calc(100vh - 60px); grid-template-rows: minmax(390px, 53vh) auto; }
   .table::after { inset: 10px; border-radius: 38% / 12%; }
@@ -289,11 +294,22 @@ dialog::backdrop { background: rgba(1, 12, 9, .78); backdrop-filter: blur(4px); 
   .play-area { transform: translate(-50%, -42%); }
   .pile { min-height: 118px; }
   .you-badge { bottom: 12px; }
-  .hand-panel { padding-top: 18px; }
-  .hand { justify-content: flex-start; min-height: 140px; }
+  .hand-panel { padding: 18px 14px 24px; }
+  .hand-heading { align-items: flex-start; flex-direction: column; gap: 12px; margin-bottom: 10px; }
+  h1 { max-width: 12ch; font-size: clamp(26px, 8vw, 34px); line-height: 1.05; }
+  .game-settings { width: 100%; justify-content: flex-start; }
+  .game-settings select { height: 40px; }
+  .new-game { padding: 10px 2px; }
+  .hand { justify-content: flex-start; min-height: 132px; margin-inline: -6px; padding: 10px 6px 4px; }
+  .card { flex-basis: clamp(58px, 17vw, 72px); height: clamp(96px, 28vw, 116px); padding: 8px; }
+  .card .rank { font-size: clamp(17px, 5vw, 22px); }
+  .card .suit { font-size: clamp(17px, 5vw, 22px); }
+  .card.selected { transform: translateY(-10px); }
   .action-bar { align-items: stretch; flex-direction: column; }
   .action-bar p { text-align: center; }
-  .game-actions { display: grid; grid-template-columns: 1fr 1.6fr; }
+  .game-actions { display: grid; grid-template-columns: 1fr 1fr; }
+  .game-actions button { min-width: 0; padding-inline: 12px; }
+  .play-button { grid-column: 1 / -1; }
 }
 
 @media (max-width: 480px) {
