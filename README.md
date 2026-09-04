@@ -138,11 +138,9 @@ exposed directly to the public internet.
 
 ## Remaining roadmap
 
-1. Add the between-round President/Vice-President card exchange and retain the
-   finish order for the next deal.
-2. Add a clean leave-room flow and decide how an in-progress game handles a
+1. Add a clean leave-room flow and decide how an in-progress game handles a
    disconnected player.
-3. Consolidate the two legacy sockets into one framed connection, add clean
+2. Consolidate the two legacy sockets into one framed connection, add clean
    disconnect/reconnect behavior, and test a seven-client match end to end.
 
 The implemented house rules follow the original `Player` comments: equal ranks
