@@ -48,6 +48,7 @@ let soundOn = true;
 let sessionToken = localStorage.getItem('presidents_session');
 let profile = null;
 let pendingLoginOptions;
+let loginOptionsReady = false;
 
 function humanPlayerName() {
   return profile?.username || 'You';
@@ -512,7 +513,16 @@ elements.accountButton.addEventListener('click', () => {
   // user's tap. Fetch the challenge while the account sheet is open so the
   // sign-in button can start the ceremony without another await beforehand.
   if (!profile && !pendingLoginOptions) {
-    pendingLoginOptions = api('login-options').catch(() => null);
+    const signInButton = document.querySelector('#signin-button');
+    signInButton.disabled = true;
+    loginOptionsReady = false;
+    pendingLoginOptions = api('login-options')
+      .then((result) => {
+        loginOptionsReady = Boolean(result);
+        return result;
+      })
+      .catch(() => null)
+      .finally(() => { signInButton.disabled = false; });
   }
 });
 document.querySelector('#auth-close').addEventListener('click', () => elements.authDialog.close());
@@ -571,15 +581,19 @@ document.querySelector('#register-button').addEventListener('click', async () =>
 
 document.querySelector('#signin-button').addEventListener('click', async () => {
   try {
+    if (!loginOptionsReady && !pendingLoginOptions) {
+      throw new Error('Preparing sign-in… Please tap the button again.');
+    }
     setAuthStatus('Choose your scummie passkey…');
-    const { startAuthentication } = await loadWebAuthn();
     const start = await (pendingLoginOptions || api('login-options'));
     pendingLoginOptions = undefined;
     if (!start) throw new Error('The sign-in request could not be prepared. Please try again.');
+    const { startAuthentication } = window.SimpleWebAuthnBrowser;
     const credential = await startAuthentication({ optionsJSON: start.options });
     acceptSession(await api('login-verify', { challengeId: start.challengeId, credential }));
   } catch (error) {
     pendingLoginOptions = undefined;
+    loginOptionsReady = false;
     setAuthStatus(error.message, true);
   }
 });
