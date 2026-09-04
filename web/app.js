@@ -246,7 +246,7 @@ function validateCards(cards) {
   if (!cards.every((card) => card.value === cards[0].value)) return { valid: false, message: 'Choose cards of the same rank' };
   if (game.firstPlay && !cards.some((card) => card.id === '0-0')) return { valid: false, message: 'The first play must include the 3 of clubs' };
   if (game.cardsInPlay && cards.length < game.cardsInPlay) return { valid: false, message: `Play at least ${game.cardsInPlay} ${game.cardsInPlay === 1 ? 'card' : 'cards'}` };
-  if (game.cardsInPlay && cards[0].value < game.valueInPlay) return { valid: false, message: `Play ${RANKS[game.valueInPlay]} or higher` };
+  if (game.cardsInPlay && cards[0].value !== game.valueInPlay) return { valid: false, message: `Play ${RANKS[game.valueInPlay]}s` };
   return { valid: true, message: `${playLabel(cards)} ready` };
 }
 
@@ -342,10 +342,8 @@ function chooseBotPlay(index) {
   });
   if (game.firstPlay) return byRank.get(0) || [];
   if (!game.cardsInPlay) return byRank.get([...byRank.keys()].sort((a, b) => a - b)[0]);
-  for (const value of [...byRank.keys()].sort((a, b) => a - b)) {
-    const group = byRank.get(value);
-    if (value >= game.valueInPlay && group.length >= game.cardsInPlay) return group;
-  }
+  const group = byRank.get(game.valueInPlay) || [];
+  if (group.length >= game.cardsInPlay) return group;
   return [];
 }
 function queueBotTurn() {
