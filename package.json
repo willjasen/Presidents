@@ -6,7 +6,8 @@
   "scripts": {
     "build": "node scripts/build.mjs",
     "dev": "npm run build && node --env-file=.env scripts/dev-server.mjs",
-    "db:setup": "node --env-file=.env scripts/setup-db.mjs"
+    "db:setup": "node --env-file=.env scripts/setup-db.mjs",
+    "db:setup:prod": "node --env-file=.env.production scripts/setup-db.mjs"
   },
   "dependencies": {
     "@neondatabase/serverless": "^1.0.2",

@@ -10,4 +10,5 @@ data/
 node_modules/
 dist/
 .env
+.env.production
 .netlify/
