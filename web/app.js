@@ -169,12 +169,12 @@ function recordAction(playerIndex, action, cards, handSizeAfter, pileCountBefore
 
 function renderOpponents() {
   const seatLayouts = {
-    1: [[50, 15]],
+    1: [[50, 28]],
     2: [[18, 43], [82, 43]],
-    3: [[14, 48], [50, 15], [86, 48]],
-    4: [[13, 57], [27, 18], [73, 18], [87, 57]],
-    5: [[11, 59], [24, 22], [50, 12], [76, 22], [89, 59]],
-    6: [[10, 62], [15, 30], [37, 12], [63, 12], [85, 30], [90, 62]],
+    3: [[14, 48], [50, 28], [86, 48]],
+    4: [[13, 57], [27, 29], [73, 29], [87, 57]],
+    5: [[11, 59], [24, 30], [50, 26], [76, 30], [89, 59]],
+    6: [[10, 62], [15, 34], [37, 27], [63, 27], [85, 34], [90, 62]],
   };
   const seats = seatLayouts[players.length - 1];
   elements.opponents.innerHTML = players.slice(1).map((name, offset) => {
