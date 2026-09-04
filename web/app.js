@@ -574,14 +574,20 @@ function acceptSession(result) {
   sessionToken = result.token;
   localStorage.setItem('presidents_session', sessionToken);
   profile = result.user;
+  applyHumanPlayerName();
   renderProfile();
+  render();
   setAuthStatus('Signed in.');
   showToast(`Welcome, ${profile.username}!`);
   syncFinishedGame();
 }
 async function loadProfile() {
   if (!sessionToken) return renderProfile();
-  try { profile = (await api('me')).user; }
+  try {
+    profile = (await api('me')).user;
+    applyHumanPlayerName();
+    render();
+  }
   catch { localStorage.removeItem('presidents_session'); sessionToken = null; profile = null; }
   renderProfile();
 }
