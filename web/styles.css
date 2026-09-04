@@ -292,7 +292,7 @@ dialog::backdrop { background: rgba(1, 12, 9, .78); backdrop-filter: blur(4px); 
   .table::after { inset: 10px; border-radius: 38% / 12%; }
   .opponent .player-copy { display: none; }
   .opponent .avatar { width: 38px; height: 38px; font-size: 12px; }
-  .turn-banner { bottom: 62px; }
+  .turn-banner { bottom: 148px; }
   .turn-banner.new-round {
     bottom: 148px;
     max-width: calc(100% - 32px);
