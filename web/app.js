@@ -47,6 +47,14 @@ let soundOn = true;
 let sessionToken = localStorage.getItem('presidents_session');
 let profile = null;
 
+function humanPlayerName() {
+  return profile?.username || 'You';
+}
+
+function applyHumanPlayerName() {
+  if (players.length) players[0] = humanPlayerName();
+}
+
 function createDeck() {
   return RANKS.flatMap((rank, value) => SUITS.map((suit, suitIndex) => ({
     id: `${value}-${suitIndex}`, value, rank, suit: suit.symbol, suitKey: suit.key, red: suit.red,
@@ -99,6 +107,7 @@ function restoreGame() {
           || storedGame.finishOrder.some((index) => !Number.isInteger(index) || index < 0 || index >= playerCount))) return false;
 
     players = PLAYER_NAMES.slice(0, playerCount);
+    applyHumanPlayerName();
     elements.playerCount.value = String(playerCount);
     game = {
       ...storedGame,
@@ -126,6 +135,7 @@ function newGame() {
   clearTimeout(botTimer);
   const playerCount = Number(elements.playerCount.value);
   players = PLAYER_NAMES.slice(0, playerCount);
+  applyHumanPlayerName();
   const hands = Array.from({ length: playerCount }, () => []);
   shuffle(createDeck()).forEach((card, index) => hands[index % playerCount].push(card));
   hands.forEach((hand) => hand.sort((a, b) => a.value - b.value || a.suitKey.localeCompare(b.suitKey)));
@@ -225,6 +235,8 @@ function render() {
   elements.hand.innerHTML = game.hands[0].map((card) => cardMarkup(card, {
     button: true, selectedCard: selected.has(card.id),
   })).join('');
+  document.querySelector('.avatar-you').textContent = humanPlayerName()[0].toUpperCase();
+  document.querySelector('.you-badge .player-copy strong').textContent = humanPlayerName();
   elements.yourCount.textContent = countLabel(game.hands[0].length);
 
   renderOpponents();
@@ -407,7 +419,7 @@ async function finishGame() {
 
 function showRoundResults() {
   elements.roundResultsIntro.textContent = 'These titles determine the card exchange in the next game.';
-  elements.roundResultsTable.innerHTML = `<div class="leaderboard-row header"><span>#</span><span>Player</span><span class="leaderboard-stat">Title</span></div>${game.finishOrder.map((index, place) => `<div class="leaderboard-row ${index === 0 ? 'is-you' : ''}"><span class="leaderboard-rank">${place + 1}</span><span class="leaderboard-name">${escapeHtml(players[index])}${index === 0 ? ' · You' : ''}</span><span class="leaderboard-stat">${placeName(place + 1)}</span></div>`).join('')}`;
+  elements.roundResultsTable.innerHTML = `<div class="leaderboard-row header"><span>#</span><span>Player</span><span class="leaderboard-stat">Title</span></div>${game.finishOrder.map((index, place) => `<div class="leaderboard-row ${index === 0 ? 'is-you' : ''}"><span class="leaderboard-rank">${place + 1}</span><span class="leaderboard-name">${escapeHtml(players[index])}</span><span class="leaderboard-stat">${placeName(place + 1)}</span></div>`).join('')}`;
   elements.roundResultsDialog.showModal();
 }
 
@@ -570,6 +582,8 @@ function renderProfile() {
   elements.accountButton.classList.toggle('signed-in', Boolean(profile));
   elements.leaderboardButton.hidden = !profile;
   elements.accountLabel.textContent = profile ? profile.username : 'Sign in';
+  applyHumanPlayerName();
+  if (game) render();
   if (profile) {
     document.querySelector('#profile-name').textContent = profile.username;
     document.querySelector('#profile-avatar').textContent = profile.username[0].toUpperCase();
@@ -593,7 +607,7 @@ function renderLeaderboard(players) {
     ${players.map((player, index) => `
       <div class="leaderboard-row ${profile?.id === player.id ? 'is-you' : ''}">
         <span class="leaderboard-rank">${index + 1}</span>
-        <span class="leaderboard-name">${escapeHtml(player.username)}${profile?.id === player.id ? ' · You' : ''}</span>
+        <span class="leaderboard-name">${escapeHtml(player.username)}</span>
         <span class="leaderboard-stat">${player.wins}</span>
         <span class="leaderboard-stat">${player.losses}</span>
         <span class="leaderboard-stat leaderboard-rate">${player.winRate}%</span>
