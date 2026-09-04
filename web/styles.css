@@ -217,6 +217,11 @@ h2 { margin: 0; font-size: 28px; }
   min-height: 46px; padding: 0 22px; border-radius: 8px; font-weight: 700; cursor: pointer;
 }
 .pass-button { border: 1px solid rgba(255,255,255,.18); background: transparent; }
+.end-game-button {
+  min-height: 46px; padding: 0 14px; border: 1px solid rgba(225, 133, 133, .38);
+  border-radius: 8px; background: transparent; color: #e7a7a7; font-weight: 700; cursor: pointer;
+}
+.end-game-button:hover { border-color: rgba(245, 170, 170, .7); color: #ffd0d0; background: rgba(189, 63, 69, .12); }
 .play-button { border: 1px solid #f2d987; background: var(--gold); color: #18342c; box-shadow: 0 8px 24px rgba(0,0,0,.2); }
 .play-button span { margin-left: 14px; }
 button:disabled { opacity: .4; cursor: not-allowed; }

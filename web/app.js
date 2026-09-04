@@ -17,6 +17,7 @@ const elements = {
   selectionHint: document.querySelector('#selection-hint'),
   playButton: document.querySelector('#play-button'),
   passButton: document.querySelector('#pass-button'),
+  endGameButton: document.querySelector('#end-game-button'),
   newGameButton: document.querySelector('#new-game-button'),
   playerCount: document.querySelector('#player-count'),
   opponents: document.querySelector('#opponents'),
@@ -125,6 +126,12 @@ function newGame() {
   render();
   showToast(openingPlayer === 0 ? 'You hold the 3 of clubs. You lead!' : `${players[openingPlayer]} holds the 3 of clubs.`);
   queueBotTurn();
+}
+
+function endGame() {
+  const shouldReset = game.status === 'finished'
+    || window.confirm('End this game and start a new one?');
+  if (shouldReset) newGame();
 }
 
 function cardMarkup(card, { button = false, selectedCard = false, index = 0 } = {}) {
@@ -420,6 +427,7 @@ elements.hand.addEventListener('click', (event) => {
 });
 elements.playButton.addEventListener('click', () => playCards(0, selectedCards()));
 elements.passButton.addEventListener('click', () => pass(0));
+elements.endGameButton.addEventListener('click', endGame);
 elements.newGameButton.addEventListener('click', newGame);
 document.querySelector('#rules-button').addEventListener('click', () => elements.rulesDialog.showModal());
 document.querySelector('#rules-close').addEventListener('click', () => elements.rulesDialog.close());
