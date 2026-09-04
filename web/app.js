@@ -18,8 +18,8 @@ const elements = {
   playButton: document.querySelector('#play-button'),
   passButton: document.querySelector('#pass-button'),
   endGameButton: document.querySelector('#end-game-button'),
-  newGameButton: document.querySelector('#new-game-button'),
-  playerCount: document.querySelector('#player-count'),
+  endGameDialog: document.querySelector('#end-game-dialog'),
+  nextPlayerCount: document.querySelector('#next-player-count'),
   opponents: document.querySelector('#opponents'),
   yourCount: document.querySelector('#your-count'),
   toast: document.querySelector('#toast'),
@@ -109,7 +109,7 @@ function restoreGame() {
 
     players = PLAYER_NAMES.slice(0, playerCount);
     applyHumanPlayerName();
-    elements.playerCount.value = String(playerCount);
+    elements.nextPlayerCount.value = String(playerCount);
     game = {
       ...storedGame,
       passed: new Set((storedGame.passed || []).filter((index) => Number.isInteger(index) && index >= 0 && index < playerCount)),
@@ -132,9 +132,8 @@ function restoreGame() {
   }
 }
 
-function newGame() {
+function newGame(playerCount = Number(elements.nextPlayerCount?.value || 4)) {
   clearTimeout(botTimer);
-  const playerCount = Number(elements.playerCount.value);
   players = PLAYER_NAMES.slice(0, playerCount);
   applyHumanPlayerName();
   const hands = Array.from({ length: playerCount }, () => []);
@@ -170,9 +169,8 @@ function applyTitleExchange(hands) {
 }
 
 function endGame() {
-  const shouldReset = game.status === 'finished'
-    || window.confirm('End this game and start a new one?');
-  if (shouldReset) newGame();
+  elements.nextPlayerCount.value = String(players.length);
+  elements.endGameDialog.showModal();
 }
 
 function cardMarkup(card, { button = false, selectedCard = false, index = 0 } = {}) {
@@ -494,7 +492,9 @@ elements.hand.addEventListener('click', (event) => {
 elements.playButton.addEventListener('click', () => playCards(0, selectedCards()));
 elements.passButton.addEventListener('click', () => pass(0));
 elements.endGameButton.addEventListener('click', endGame);
-elements.newGameButton.addEventListener('click', () => game.status === 'finished' ? showRoundResults() : newGame());
+document.querySelector('#end-game-close').addEventListener('click', () => elements.endGameDialog.close());
+document.querySelector('#cancel-end-game').addEventListener('click', () => elements.endGameDialog.close());
+document.querySelector('#confirm-end-game').addEventListener('click', () => { elements.endGameDialog.close(); newGame(); });
 document.querySelector('#start-next-game').addEventListener('click', () => { elements.roundResultsDialog.close(); newGame(); });
 document.querySelector('#rules-button').addEventListener('click', () => elements.rulesDialog.showModal());
 document.querySelector('#rules-close').addEventListener('click', () => elements.rulesDialog.close());

@@ -54,19 +54,7 @@
           <div class="hand-heading">
             <div>
               <p class="eyebrow">YOUR HAND</p>
-              <h1>Choose cards to play</h1>
-            </div>
-            <div class="game-settings">
-              <label for="player-count">Players</label>
-              <select id="player-count" aria-label="Number of players">
-                <option value="2">2</option>
-                <option value="3">3</option>
-                <option value="4" selected>4</option>
-                <option value="5">5</option>
-                <option value="6">6</option>
-                <option value="7">7</option>
-              </select>
-              <button class="new-game" id="new-game-button" type="button">New game</button>
+              <h1>Cards to play</h1>
             </div>
           </div>
 
@@ -91,8 +79,22 @@
             </div>
           </div>
         </section>
-      </main>
+    </main>
     </div>
+
+    <dialog id="end-game-dialog">
+      <div class="dialog-head">
+        <div><p class="eyebrow">NEW GAME</p><h2>End this game?</h2></div>
+        <button class="dialog-close" id="end-game-close" type="button" aria-label="Cancel">×</button>
+      </div>
+      <p class="auth-intro">Choose how many players should join the next game.</p>
+      <label class="field-label" for="next-player-count">Players</label>
+      <select class="next-player-select" id="next-player-count" aria-label="Players in the new game">
+        <option value="2">2</option><option value="3">3</option><option value="4" selected>4</option>
+        <option value="5">5</option><option value="6">6</option><option value="7">7</option>
+      </select>
+      <div class="dialog-actions"><button class="pass-button" id="cancel-end-game" type="button">Cancel</button><button class="play-button" id="confirm-end-game" type="button">Start new game</button></div>
+    </dialog>
 
     <dialog id="rules-dialog">
       <div class="dialog-head">
