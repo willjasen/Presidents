@@ -83,6 +83,7 @@ function validateGameRecord(body) {
         || !Number.isInteger(finishPlace) || finishPlace < 1 || finishPlace > playerCount) {
       throw new Error('Invalid player record');
     }
+    if (finishPlace !== finishOrder.indexOf(seat) + 1) throw new Error('Invalid player record');
     return { seat, finishPlace, type: player.type, name: String(player.name || '').slice(0, 40), startingHand };
   });
   const normalizedActions = actions.map((action, index) => {
@@ -320,18 +321,6 @@ export default async (request) => {
           ON CONFLICT (game_id, sequence) DO NOTHING`),
       ]);
       return json({ saved: true, gameId: body.gameId });
-    }
-    if (body.action === 'save-result') {
-      const place = Number(body.place);
-      if (![1, 2, 3, 4].includes(place)) return json({ error: 'Invalid game result.' }, 400);
-      await sql`INSERT INTO game_stats (user_id, games_played, wins, best_place)
-        VALUES (${user.id}, 1, ${place === 1 ? 1 : 0}, ${place})
-        ON CONFLICT (user_id) DO UPDATE SET
-          games_played = game_stats.games_played + 1,
-          wins = game_stats.wins + ${place === 1 ? 1 : 0},
-          best_place = LEAST(COALESCE(game_stats.best_place, ${place}), ${place}),
-          updated_at = NOW()`;
-      return json({ saved: true });
     }
     return json({ error: 'Unknown action.' }, 400);
   } catch (error) {
