@@ -41,6 +41,8 @@ const elements = {
 let game;
 let selected = new Set();
 let botTimer;
+let syncRetryTimer;
+let syncInFlight = false;
 let soundOn = true;
 let sessionToken = localStorage.getItem('presidents_session');
 let profile = null;
@@ -410,7 +412,9 @@ function showRoundResults() {
 }
 
 async function syncFinishedGame() {
-  if (!sessionToken || game?.status !== 'finished' || game.recorded) return;
+  if (!sessionToken || game?.status !== 'finished' || game.recorded || syncInFlight) return;
+  clearTimeout(syncRetryTimer);
+  syncInFlight = true;
   const place = game.finishOrder.indexOf(0) + 1;
   try {
     await api('save-game', {
@@ -435,6 +439,10 @@ async function syncFinishedGame() {
     await loadProfile();
   } catch {
     showToast('Game saved on this device; database sync will retry after sign-in.');
+    clearTimeout(syncRetryTimer);
+    syncRetryTimer = setTimeout(() => syncFinishedGame(), 10000);
+  } finally {
+    syncInFlight = false;
   }
 }
 function showToast(message) {
