@@ -276,6 +276,7 @@ function render() {
   document.querySelector('.you-badge .player-copy strong').textContent = humanPlayerName();
   elements.yourCount.textContent = humanPassed ? `Passed · ${countLabel(game.hands[0].length)}` : countLabel(game.hands[0].length);
   document.querySelector('.you-badge').classList.toggle('passed', humanPassed);
+  document.querySelector('.you-badge').setAttribute('aria-label', `${humanPlayerName()}: ${humanPassed ? `Passed, ${countLabel(game.hands[0].length)}` : countLabel(game.hands[0].length)}`);
 
   renderOpponents();
   document.querySelectorAll('.opponent').forEach((opponent) => {
