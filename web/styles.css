@@ -15,6 +15,10 @@
   --black-card: #17211e;
   font-family: 'DM Sans', system-ui, sans-serif;
 }
+@keyframes all-around-text-pop {
+  from { opacity: 0; transform: translateY(-5px); }
+  to { opacity: 1; transform: translateY(0); }
+}
 
 * { box-sizing: border-box; }
 
@@ -146,9 +150,20 @@ button { color: inherit; }
   font-size: 15px; box-shadow: 0 8px 28px rgba(0,0,0,.28), 0 0 0 5px rgba(232,198,106,.14);
   animation: round-pop .38s ease-out;
 }
+.turn-banner.all-around {
+  padding: 11px 18px; border-color: rgba(232,198,106,.45); background: linear-gradient(135deg, rgba(255,208,102,.99), rgba(232,198,106,.82));
+  color: #102c26; font-size: 15px; font-weight: 800; text-transform: none; letter-spacing: 0;
+  box-shadow: 0 10px 30px rgba(0,0,0,.28), 0 0 0 6px rgba(255,208,102,.14);
+  animation: all-around-pop .42s ease-out;
+}
 @keyframes round-pop {
   from { opacity: 0; transform: translateX(-50%) scale(.82); }
   to { opacity: 1; transform: translateX(-50%) scale(1); }
+}
+@keyframes all-around-pop {
+  0% { opacity: 0; transform: translateX(-50%) scale(.78); }
+  30% { opacity: 1; transform: translateX(-50%) scale(1.04); }
+  100% { opacity: 1; transform: translateX(-50%) scale(1); }
 }
 
 .play-area {
@@ -166,8 +181,12 @@ button { color: inherit; }
 .round-start-pile strong { font: 650 18px/1.1 'Fraunces', serif; }
 .round-start-pile small { color: #dce7e3; font-weight: 700; }
 .last-play {
-  min-height: 38px; margin: 0; max-width: 430px; display: flex; align-items: center; justify-content: center;
+  min-height: 38px; margin: 0; max-width: 430px; display: flex; flex-wrap: wrap; align-items: center; justify-content: center;
   gap: 12px; color: #f1f5f3; font-size: 18px; font-weight: 700; line-height: 1.35; text-align: center;
+}
+.all-around-message {
+  flex-basis: 100%; color: var(--gold); font-size: 15px; letter-spacing: .04em;
+  text-transform: uppercase; animation: all-around-text-pop .42s ease-out;
 }
 .played-card-pictures { display: flex; padding-left: 8px; }
 .played-card-picture {

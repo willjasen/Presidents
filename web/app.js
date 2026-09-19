@@ -151,6 +151,9 @@ function newGame(playerCount = Number(elements.nextPlayerCount?.value || 4)) {
   };
   selected = new Set();
   if (openingPlayer === 0) selected.add('0-0');
+  game.aroundRank = null;
+  game.aroundCount = 0;
+  game.allAround = false;
   saveGame();
   render();
   showToast(openingPlayer === 0 ? 'You hold the 3 of clubs. You lead!' : `${players[openingPlayer]} holds the 3 of clubs.`);
@@ -255,7 +258,8 @@ function render() {
   if (game.lastCards.length) {
     elements.pile.innerHTML = game.lastCards.map((card, index) => cardMarkup(card, { index })).join('');
     const activity = game.activity || `${players[game.lastPlayer]} played ${playLabel(game.lastCards)}.`;
-    elements.lastPlay.innerHTML = `${playedCardPictures(game.lastCards)}<span>${activity}</span>`;
+    const allAroundMessage = game.allAround ? `${RANKS[game.aroundRank]}s all around!` : '';
+    elements.lastPlay.innerHTML = `${playedCardPictures(game.lastCards)}<span>${activity}</span>${allAroundMessage ? `<strong class="all-around-message">${allAroundMessage}</strong>` : ''}`;
   } else {
     const leaderText = game.current === 0 ? 'You lead' : `${players[game.current]} leads`;
     elements.pile.innerHTML = `<div class="empty-pile round-start-pile"><span>♣</span><strong>Round ${roundNumber}</strong><small>${leaderText}</small></div>`;
@@ -266,13 +270,19 @@ function render() {
   }
 
   elements.turnBanner.classList.toggle('new-round', roundStart);
+  elements.turnBanner.classList.toggle('all-around', Boolean(game.allAround));
   if (game.status === 'finished') {
     const place = game.finishOrder.indexOf(0) + 1;
     elements.turnBanner.textContent = place === 1 ? 'You’re President!' : `You finished ${placeName(place)}`;
   } else if (roundStart) {
     elements.turnBanner.textContent = `Round ${roundNumber} · ${game.current === 0 ? 'You lead' : `${players[game.current]} leads`}`;
-  } else if (humanTurn) elements.turnBanner.textContent = 'Your turn';
-  else elements.turnBanner.textContent = `${players[game.current]} is thinking…`;
+  } else if (game.allAround) {
+    elements.turnBanner.textContent = `${RANKS[game.aroundRank]}'s all around!`;
+  } else if (humanTurn) {
+    elements.turnBanner.textContent = 'Your turn';
+  } else {
+    elements.turnBanner.textContent = `${players[game.current]} is thinking…`;
+  }
 
   const validation = validateSelection();
   elements.playButton.disabled = !humanTurn || !validation.valid;
@@ -308,6 +318,22 @@ function selectionMessage(validation, humanTurn) {
   return validation.message;
 }
 
+function allAroundAnnouncement(cards) {
+  if (!cards?.length || cards.length !== 1) {
+    return '';
+  }
+  const rank = cards[0].value;
+  const continuingAround = game.aroundRank === rank && game.valueInPlay === rank && game.cardsInPlay === 1;
+  game.aroundRank = rank;
+  game.aroundCount = continuingAround ? (game.aroundCount || 0) + 1 : 1;
+  if (players.length >= 4 && game.aroundCount >= 4) {
+    game.allAround = true;
+    return `${cards[0].rank}'s all around!`;
+  }
+  game.allAround = false;
+  return '';
+}
+
 function playCards(playerIndex, cards) {
   if (game.status !== 'playing' || playerIndex !== game.current) return;
   const validation = validateCards(cards);
@@ -315,6 +341,12 @@ function playCards(playerIndex, cards) {
   const pileCountBefore = game.cardsInPlay;
   const pileRankBefore = game.valueInPlay;
   const ids = new Set(cards.map((card) => card.id));
+  const isSingleRank = cards.length === 1;
+  if (!isSingleRank) {
+    game.aroundRank = null;
+    game.aroundCount = 0;
+    game.allAround = false;
+  }
   game.hands[playerIndex] = game.hands[playerIndex].filter((card) => !ids.has(card.id));
   recordAction(playerIndex, 'play', cards, game.hands[playerIndex].length, pileCountBefore, pileRankBefore);
   game.cardsInPlay = cards.length;
@@ -322,7 +354,11 @@ function playCards(playerIndex, cards) {
   game.lastCards = cards;
   game.lastPlayer = playerIndex;
   const clearsWithTwo = cards[0].value === RANKS.length - 1;
+  const allAroundMessage = allAroundAnnouncement(cards);
   game.activity = `${players[playerIndex]} played ${playLabel(cards)}${clearsWithTwo ? ' and cleared the trick' : ''}.`;
+  if (allAroundMessage) {
+    showToast(allAroundMessage);
+  }
   game.trickLeader = playerIndex;
   game.firstPlay = false;
   game.passed.delete(playerIndex);
