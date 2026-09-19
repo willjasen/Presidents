@@ -333,19 +333,19 @@ h2 { margin: 0; font-size: 28px; }
 
 .hand {
   min-height: 154px; max-width: 1160px; margin: 0 auto; padding: 12px 8px 4px;
-  display: grid; grid-template-columns: repeat(var(--hand-count, 13), minmax(0, 1fr)); gap: 4px;
-  align-items: end; justify-content: start; overflow: hidden;
+  display: grid; grid-template-columns: repeat(var(--hand-count, 13), minmax(0, auto));
+  justify-content: center; align-items: end; gap: 4px; overflow: hidden;
 }
 
 .card {
-  position: relative; flex: 0 0 clamp(66px, 7.4vw, 92px); height: clamp(104px, 11vw, 136px);
+  position: relative; width: clamp(66px, 7.4vw, 92px); height: clamp(104px, 11vw, 136px);
   margin-left: clamp(-24px, -1.6vw, -12px); padding: 10px;
   display: grid; align-content: start; justify-items: start;
   background: var(--card); border: 0; border-radius: 9px; color: var(--black-card); cursor: pointer;
   box-shadow: 0 7px 14px rgba(0,0,0,.28), inset 0 0 0 1px rgba(23,33,30,.15);
   transition: transform .16s ease, box-shadow .16s ease;
 }
-.hand > .card { width: 108%; min-width: 0; margin-left: -8%; }
+.hand > .card { min-width: 0; }
 .hand > .card:first-child { margin-left: 0; }
 .card:first-child { margin-left: 0; }
 .card:hover { transform: translateY(-7px); box-shadow: 0 12px 20px rgba(0,0,0,.32); }
@@ -516,7 +516,11 @@ dialog::backdrop { background: rgba(1, 12, 9, .78); backdrop-filter: blur(4px); 
   .game-settings { width: 100%; justify-content: flex-start; }
   .game-settings select { height: 40px; }
   .new-game { padding: 10px 2px; }
-  .hand { min-height: 92px; margin-inline: -6px; padding: 4px 6px 2px; gap: 2px; }
+  .hand {
+    min-height: 92px; margin-inline: -6px; padding: 4px 6px 2px;
+    grid-template-columns: repeat(var(--hand-count, 13), minmax(0, 1fr));
+    justify-content: stretch; gap: 2px;
+  }
   .hand > .card {
     width: 115%;
     margin-left: -15%;
