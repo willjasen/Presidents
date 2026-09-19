@@ -145,6 +145,10 @@ function restoreGame() {
       history: Array.isArray(storedGame.history) ? storedGame.history : [],
       trickNumber: Number.isInteger(storedGame.trickNumber) ? storedGame.trickNumber : 1,
       recorded: Boolean(storedGame.recorded),
+      aroundRank: Number.isInteger(storedGame.aroundRank) ? storedGame.aroundRank : null,
+      aroundCount: Number.isInteger(storedGame.aroundCount) ? storedGame.aroundCount : 0,
+      allAround: Boolean(storedGame.allAround),
+      completedAt: storedGame.completedAt || undefined,
     };
     const humanCardIds = new Set(game.hands[0].map((card) => card.id));
     selected = new Set((saved.selected || []).filter((id) => humanCardIds.has(id)));
@@ -590,6 +594,10 @@ elements.hand.addEventListener('click', (event) => {
 elements.playButton.addEventListener('click', () => playCards(0, selectedCards()));
 elements.passButton.addEventListener('click', () => pass(0));
 elements.endGameButton.addEventListener('click', endGame);
+window.addEventListener('pagehide', saveGame);
+document.addEventListener('visibilitychange', () => {
+  if (document.visibilityState === 'hidden') saveGame();
+});
 document.querySelector('#end-game-close').addEventListener('click', () => elements.endGameDialog.close());
 document.querySelector('#cancel-end-game').addEventListener('click', () => elements.endGameDialog.close());
 document.querySelector('#confirm-end-game').addEventListener('click', () => { elements.endGameDialog.close(); newGame(); });
