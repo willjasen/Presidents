@@ -455,7 +455,7 @@ dialog::backdrop { background: rgba(1, 12, 9, .78); backdrop-filter: blur(4px); 
   }
   .play-area { top: 56%; transform: translate(-50%, -35%); }
   .pile { min-height: 118px; }
-  .you-badge { bottom: 32px; }
+  .you-badge { bottom: 4px; }
   .hand-panel { min-height: 0; padding: 10px 14px 8px; overflow: hidden; }
   .hand-heading { align-items: flex-start; flex-direction: column; gap: 6px; margin-bottom: 6px; }
   h1 { max-width: 12ch; font-size: clamp(26px, 8vw, 34px); line-height: 1.05; }
