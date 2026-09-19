@@ -335,7 +335,8 @@ h2 { margin: 0; font-size: 28px; }
   box-shadow: 0 7px 14px rgba(0,0,0,.28), inset 0 0 0 1px rgba(23,33,30,.15);
   transition: transform .16s ease, box-shadow .16s ease;
 }
-.hand > .card { width: 100%; min-width: 0; margin-left: 0; }
+.hand > .card { width: 108%; min-width: 0; margin-left: -8%; }
+.hand > .card:first-child { margin-left: 0; }
 .card:first-child { margin-left: 0; }
 .card:hover { transform: translateY(-7px); box-shadow: 0 12px 20px rgba(0,0,0,.32); }
 .card.selected { transform: translateY(-16px); box-shadow: 0 0 0 3px var(--gold), 0 17px 25px rgba(0,0,0,.35); }
@@ -487,7 +488,13 @@ dialog::backdrop { background: rgba(1, 12, 9, .78); backdrop-filter: blur(4px); 
   .game-settings select { height: 40px; }
   .new-game { padding: 10px 2px; }
   .hand { min-height: 92px; margin-inline: -6px; padding: 4px 6px 2px; gap: 2px; }
-  .hand > .card { height: clamp(76px, 22vw, 92px); padding: 5px 3px; }
+  .hand > .card {
+    width: 115%;
+    margin-left: -15%;
+    height: clamp(76px, 22vw, 92px);
+    padding: 5px 3px;
+  }
+  .hand > .card:first-child { margin-left: 0; }
   .hand > .card .rank { font-size: clamp(13px, 3.8vw, 18px); }
   .hand > .card .suit { font-size: clamp(13px, 3.8vw, 18px); }
   .card.selected { transform: translateY(-10px); }
