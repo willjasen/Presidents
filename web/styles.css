@@ -333,8 +333,8 @@ h2 { margin: 0; font-size: 28px; }
 
 .hand {
   min-height: 154px; max-width: 1160px; margin: 0 auto; padding: 12px 8px 4px;
-  display: grid; grid-template-columns: repeat(13, minmax(0, 1fr)); gap: 4px;
-  align-items: end; overflow: hidden;
+  display: grid; grid-template-columns: repeat(var(--hand-count, 13), minmax(0, 1fr)); gap: 4px;
+  align-items: end; justify-content: start; overflow: hidden;
 }
 
 .card {
