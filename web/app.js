@@ -267,6 +267,7 @@ function render() {
   elements.hand.innerHTML = game.hands[0].map((card) => cardMarkup(card, {
     button: true, selectedCard: selected.has(card.id),
   })).join('');
+  elements.hand.style.setProperty('--hand-count', Math.max(game.hands[0].length, 1));
   document.querySelector('.avatar-you').textContent = humanPlayerName()[0].toUpperCase();
   document.querySelector('.you-badge .player-copy strong').textContent = humanPlayerName();
   elements.yourCount.textContent = countLabel(game.hands[0].length);
