@@ -221,10 +221,10 @@ function renderOpponents() {
   elements.opponents.innerHTML = players.slice(1).map((name, offset) => {
     const index = offset + 1;
     const [x, y] = seats[offset];
-    const side = x > 50 ? 'right' : 'left';
-    return `<div class="opponent" data-player="${index}" data-side="${side}" style="--seat-x:${x}%;--seat-y:${y}%">
+    const side = x === 50 ? 'top' : x > 50 ? 'right' : 'left';
+    return `<div class="opponent" data-player="${index}" data-side="${side}" aria-label="${name}: ${countLabel(game.hands[index].length)}" style="--seat-x:${x}%;--seat-y:${y}%">
       <div class="avatar" aria-hidden="true">${name[0]}</div>
-      <div class="player-copy"><strong>${name}</strong><span>${countLabel(game.hands[index].length)}</span></div>
+      <div class="player-copy"><strong>${name}</strong><span class="card-count">${countLabel(game.hands[index].length)}</span></div>
     </div>`;
   }).join('');
 }
@@ -248,6 +248,7 @@ function render() {
     opponent.querySelector('.player-copy span').textContent = finishedAt >= 0
       ? placeName(finishedAt + 1)
       : game.passed.has(index) ? `Passed · ${cardCount}` : cardCount;
+    opponent.setAttribute('aria-label', `${players[index]}: ${finishedAt >= 0 ? placeName(finishedAt + 1) : cardCount}`);
     opponent.classList.toggle('active', game.current === index && game.status === 'playing');
   });
 
