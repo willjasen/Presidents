@@ -157,8 +157,9 @@ function restoreGame() {
     if (!Number.isInteger(game.trickCardsPlayed) || game.trickCardsPlayed < 0) {
       game.trickCardsPlayed = 0;
     }
-    if (!Number.isInteger(game.trickCardTarget) || game.trickCardTarget <= 0) {
-      game.trickCardTarget = Math.max(1, playerCount - game.finishOrder.length);
+    if (!Number.isInteger(game.trickCardTarget) || game.trickCardTarget < playerCount) {
+      game.trickCardsPlayed = 0;
+      game.trickCardTarget = playerCount;
     }
     const humanCardIds = new Set(game.hands[0].map((card) => card.id));
     selected = new Set((saved.selected || []).filter((id) => humanCardIds.has(id)));
@@ -404,6 +405,9 @@ function playCards(playerIndex, cards) {
   if (game.status !== 'playing' || playerIndex !== game.current || game.passed.has(playerIndex)) return;
   const validation = validateCards(cards);
   if (!validation.valid) return showToast(validation.message);
+  if (game.trickCardsPlayed === 0) {
+    game.trickCardTarget = cards.length * players.length;
+  }
   game.trickCardsPlayed = (game.trickCardsPlayed || 0) + cards.length;
   const pileCountBefore = game.cardsInPlay;
   const pileRankBefore = game.valueInPlay;
@@ -498,7 +502,7 @@ function advanceTurn() {
     game.passed.clear();
     game.trickNumber = (game.trickNumber || 1) + 1;
     game.trickCardsPlayed = 0;
-    game.trickCardTarget = Math.max(1, players.length - game.finishOrder.length);
+    game.trickCardTarget = players.length;
     game.current = isFinished(leader) ? nextActive(leader) : leader;
     game.activity = `Round ${game.trickNumber} begins — ${game.current === 0 ? 'you lead' : `${players[game.current]} leads`}.`;
     showToast(game.activity);
