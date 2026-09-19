@@ -5,6 +5,7 @@ const SUITS = [
   { symbol: '♦', key: 'diamonds', red: true },
 ];
 const RANKS = ['3', '4', '5', '6', '7', '8', '9', '10', 'J', 'Q', 'K', 'A', '2'];
+const TOTAL_CARDS = RANKS.length * SUITS.length;
 const PLAYER_NAMES = ['You', 'Jordan', 'Maya', 'Sam', 'Avery', 'Riley', 'Quinn'];
 const BOT_COLORS = ['#49b7ff', '#ff7ac6', '#7adf8d', '#ffbf69', '#b593ff', '#5ad9c8'];
 const GAME_STORAGE_KEY = 'presidents_saved_game_v1';
@@ -95,6 +96,10 @@ function createDeck() {
   })));
 }
 
+function totalCardsRemaining() {
+  return game.hands.reduce((sum, hand) => sum + hand.length, 0);
+}
+
 function shuffle(cards) {
   const result = [...cards];
   for (let i = result.length - 1; i > 0; i -= 1) {
@@ -150,8 +155,6 @@ function restoreGame() {
       allAround: Boolean(storedGame.allAround),
       completedAt: storedGame.completedAt || undefined,
     };
-    game.trickCardsPlayed = 0;
-    game.trickCardTarget = 0;
     const humanCardIds = new Set(game.hands[0].map((card) => card.id));
     selected = new Set((saved.selected || []).filter((id) => humanCardIds.has(id)));
     render();
@@ -177,8 +180,6 @@ function newGame(playerCount = Number(elements.nextPlayerCount?.value || 4)) {
     id: crypto.randomUUID(), startedAt: new Date().toISOString(),
     startingHands: hands.map((hand) => hand.map(cardForRecord)), history: [], trickNumber: 1, recorded: false,
   };
-  game.trickCardsPlayed = 0;
-  game.trickCardTarget = 0;
   selected = new Set();
   if (openingPlayer === 0) selected.add('0-0');
   game.aroundRank = null;
@@ -341,10 +342,8 @@ function render() {
 function updateRoundBadgeColor() {
   const badge = document.querySelector('#round-badge');
   if (!badge) return;
-  const remaining = Math.max(0, (game.trickCardTarget || players.length) - (game.trickCardsPlayed || 0));
-  const maxRemaining = game.trickCardTarget || players.length || 1;
-  const remainingRatio = remaining / maxRemaining;
-  // More cards still to be played in this trick is green; fewer is yellow/red.
+  const remainingRatio = totalCardsRemaining() / TOTAL_CARDS;
+  // More cards remaining in the full deck is green; fewer is yellow/red.
   const hue = Math.round(remainingRatio * 120);
   badge.style.setProperty('--round-badge-hue', hue);
 }
@@ -397,10 +396,6 @@ function playCards(playerIndex, cards) {
   if (game.status !== 'playing' || playerIndex !== game.current || game.passed.has(playerIndex)) return;
   const validation = validateCards(cards);
   if (!validation.valid) return showToast(validation.message);
-  if (!game.trickCardsPlayed) {
-    game.trickCardTarget = cards.length * players.filter((_, index) => !isFinished(index)).length;
-  }
-  game.trickCardsPlayed = (game.trickCardsPlayed || 0) + cards.length;
   const pileCountBefore = game.cardsInPlay;
   const pileRankBefore = game.valueInPlay;
   const ids = new Set(cards.map((card) => card.id));
@@ -493,8 +488,6 @@ function advanceTurn() {
     game.valueInPlay = -1;
     game.passed.clear();
     game.trickNumber = (game.trickNumber || 1) + 1;
-    game.trickCardsPlayed = 0;
-    game.trickCardTarget = 0;
     game.current = isFinished(leader) ? nextActive(leader) : leader;
     game.activity = `Round ${game.trickNumber} begins — ${game.current === 0 ? 'you lead' : `${players[game.current]} leads`}.`;
     showToast(game.activity);
