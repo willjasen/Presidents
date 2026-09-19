@@ -112,15 +112,6 @@ function restoreGame() {
         || !Number.isInteger(storedGame.current) || storedGame.current < 0 || storedGame.current >= playerCount
         || !['playing', 'finished'].includes(storedGame.status)) return false;
 
-    const allCards = storedGame.hands.flat();
-    const handIds = new Set(allCards.map((card) => card?.id));
-    const validCards = allCards.every((card) => card && Number.isInteger(card.value)
-      && card.value >= 0 && card.value < RANKS.length
-      && typeof card.rank === 'string' && card.rank === RANKS[card.value]
-      && typeof card.suit === 'string' && SUITS.some((suit) => suit.symbol === card.suit)
-      && /^\d+-[0-3]$/.test(card.id)
-      && card.id === `${card.value}-${SUITS.findIndex((suit) => suit.symbol === card.suit)}`);
-    if (!validCards || allCards.length !== 52 || handIds.size !== allCards.length) return false;
     if (storedGame.status === 'finished'
         && (!Array.isArray(storedGame.finishOrder) || storedGame.finishOrder.length !== playerCount
           || new Set(storedGame.finishOrder).size !== playerCount
