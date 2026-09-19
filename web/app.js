@@ -6,6 +6,7 @@ const SUITS = [
 ];
 const RANKS = ['3', '4', '5', '6', '7', '8', '9', '10', 'J', 'Q', 'K', 'A', '2'];
 const PLAYER_NAMES = ['You', 'Jordan', 'Maya', 'Sam', 'Avery', 'Riley', 'Quinn'];
+const BOT_COLORS = ['#49b7ff', '#ff7ac6', '#7adf8d', '#ffbf69', '#b593ff', '#5ad9c8'];
 const GAME_STORAGE_KEY = 'presidents_saved_game_v1';
 let players = PLAYER_NAMES.slice(0, 4);
 
@@ -49,6 +50,7 @@ let sessionToken = localStorage.getItem('presidents_session');
 let profile = null;
 let pendingLoginOptions;
 let loginOptionsReady = false;
+let specialTurnTimer = null;
 
 function humanPlayerName() {
   return profile?.username || 'You';
@@ -192,6 +194,10 @@ function playedCardPictures(cards) {
   ).join('')}</span>`;
 }
 
+function miniCardMarkup(card) {
+  return `<span class="mini-play-card ${card.red ? 'red' : 'black'}" aria-hidden="true"><span class="mini-rank">${card.rank}</span><span class="mini-suit">${card.suit}</span></span>`;
+}
+
 function cardForRecord(card) {
   return { id: card.id, rank: card.rank, suit: card.suit, value: card.value };
 }
@@ -225,8 +231,9 @@ function renderOpponents() {
     const index = offset + 1;
     const [x, y] = seats[offset];
     const side = x === 50 ? 'top' : x > 50 ? 'right' : 'left';
+    const botColor = BOT_COLORS[(index - 1) % BOT_COLORS.length];
     return `<div class="opponent" data-player="${index}" data-side="${side}" aria-label="${name}: ${countLabel(game.hands[index].length)}" style="--seat-x:${x}%;--seat-y:${y}%">
-      <div class="avatar" aria-hidden="true">${name[0]}</div>
+      <div class="avatar bot-avatar" aria-hidden="true" style="--bot-color:${botColor};">${name[0]}</div>
       <div class="player-copy"><strong>${name}</strong><span class="card-count">${countLabel(game.hands[index].length)}</span></div>
     </div>`;
   }).join('');
@@ -248,18 +255,23 @@ function render() {
     const index = Number(opponent.dataset.player);
     const finishedAt = game.finishOrder.indexOf(index);
     const cardCount = countLabel(game.hands[index].length);
+    const lastPlay = game.lastPlayer === index && game.lastCards.length ? miniCardMarkup(game.lastCards[0]) : '';
     opponent.querySelector('.player-copy span').textContent = finishedAt >= 0
       ? placeName(finishedAt + 1)
       : game.passed.has(index) ? `Passed · ${cardCount}` : cardCount;
+    opponent.querySelector('.player-copy').classList.toggle('has-mini-play', Boolean(lastPlay));
+    opponent.querySelector('.player-copy').innerHTML = `<strong>${players[index]}</strong><span class="card-count">${finishedAt >= 0 ? placeName(finishedAt + 1) : game.passed.has(index) ? `Passed · ${cardCount}` : cardCount}</span>${lastPlay ? `<span class="mini-play-stack">${game.lastCards.map((card) => miniCardMarkup(card)).join('')}</span>` : ''}`;
     opponent.setAttribute('aria-label', `${players[index]}: ${finishedAt >= 0 ? placeName(finishedAt + 1) : cardCount}`);
     opponent.classList.toggle('active', game.current === index && game.status === 'playing');
   });
 
+  elements.pile.classList.remove('is-two-clear');
   if (game.lastCards.length) {
     elements.pile.innerHTML = game.lastCards.map((card, index) => cardMarkup(card, { index })).join('');
     const activity = game.activity || `${players[game.lastPlayer]} played ${playLabel(game.lastCards)}.`;
-    const allAroundMessage = game.allAround ? `${RANKS[game.aroundRank]}s all around!` : '';
-    elements.lastPlay.innerHTML = `${playedCardPictures(game.lastCards)}<span>${activity}</span>${allAroundMessage ? `<strong class="all-around-message">${allAroundMessage}</strong>` : ''}`;
+    elements.lastPlay.innerHTML = `<span>${activity}</span>`;
+    const isTwoClear = game.lastCards[0]?.value === RANKS.length - 1;
+    elements.pile.classList.toggle('is-two-clear', isTwoClear);
   } else {
     const leaderText = game.current === 0 ? 'You lead' : `${players[game.current]} leads`;
     elements.pile.innerHTML = `<div class="empty-pile round-start-pile"><span>♣</span><strong>Round ${roundNumber}</strong><small>${leaderText}</small></div>`;
@@ -268,6 +280,8 @@ function render() {
       : `Round ${roundNumber} begins — ${game.current === 0 ? 'you lead' : `${players[game.current]} leads`}.`;
     elements.lastPlay.textContent = leadMessage;
   }
+
+  document.querySelector('#round-badge').textContent = `Round ${roundNumber}`;
 
   elements.turnBanner.classList.toggle('new-round', roundStart);
   elements.turnBanner.classList.toggle('all-around', Boolean(game.allAround));
@@ -369,10 +383,26 @@ function playCards(playerIndex, cards) {
     game.status = 'finished';
     game.completedAt = new Date().toISOString();
     finishGame();
+  } else if (clearsWithTwo || allAroundMessage) {
+    const pauseDuration = clearsWithTwo ? 2500 : 2000;
+    clearTimeout(specialTurnTimer);
+    specialTurnTimer = setTimeout(() => {
+      if (allAroundMessage && !clearsWithTwo) {
+        game.allAround = false;
+        game.current = nextEligible(game.current);
+      } else {
+        advanceTurn();
+        game.lastCards = [];
+        game.lastPlayer = null;
+      }
+      saveGame();
+      render();
+      queueBotTurn();
+    }, pauseDuration);
   } else advanceTurn();
   saveGame();
   render();
-  queueBotTurn();
+  if ((!clearsWithTwo && !allAroundMessage) || game.status === 'finished') queueBotTurn();
 }
 
 function pass(playerIndex) {
@@ -409,15 +439,19 @@ function nextEligible(from) {
 function advanceTurn() {
   if (shouldClearTrick()) {
     const leader = game.trickLeader;
+    const clearedTwo = game.valueInPlay === RANKS.length - 1;
     game.cardsInPlay = 0;
     game.valueInPlay = -1;
-    game.lastCards = [];
-    game.lastPlayer = null;
     game.passed.clear();
     game.trickNumber = (game.trickNumber || 1) + 1;
     game.current = isFinished(leader) ? nextActive(leader) : leader;
     game.activity = `Round ${game.trickNumber} begins — ${game.current === 0 ? 'you lead' : `${players[game.current]} leads`}.`;
     showToast(game.activity);
+
+    if (!clearedTwo) {
+      game.lastCards = [];
+      game.lastPlayer = null;
+    }
   } else game.current = nextEligible(game.current);
 }
 
