@@ -323,8 +323,8 @@ h2 { margin: 0; font-size: 28px; }
 
 .hand {
   min-height: 154px; max-width: 1160px; margin: 0 auto; padding: 12px 8px 4px;
-  display: flex; align-items: end; justify-content: center; overflow-x: auto; overflow-y: hidden;
-  scrollbar-width: thin; scrollbar-color: #31574c transparent;
+  display: grid; grid-template-columns: repeat(13, minmax(0, 1fr)); gap: 4px;
+  align-items: end; overflow: hidden;
 }
 
 .card {
@@ -335,6 +335,7 @@ h2 { margin: 0; font-size: 28px; }
   box-shadow: 0 7px 14px rgba(0,0,0,.28), inset 0 0 0 1px rgba(23,33,30,.15);
   transition: transform .16s ease, box-shadow .16s ease;
 }
+.hand > .card { width: 100%; min-width: 0; margin-left: 0; }
 .card:first-child { margin-left: 0; }
 .card:hover { transform: translateY(-7px); box-shadow: 0 12px 20px rgba(0,0,0,.32); }
 .card.selected { transform: translateY(-16px); box-shadow: 0 0 0 3px var(--gold), 0 17px 25px rgba(0,0,0,.35); }
@@ -485,10 +486,10 @@ dialog::backdrop { background: rgba(1, 12, 9, .78); backdrop-filter: blur(4px); 
   .game-settings { width: 100%; justify-content: flex-start; }
   .game-settings select { height: 40px; }
   .new-game { padding: 10px 2px; }
-  .hand { justify-content: flex-start; min-height: 92px; margin-inline: -6px; padding: 4px 6px 2px; }
-  .card { flex-basis: clamp(56px, 16vw, 68px); height: clamp(76px, 22vw, 92px); padding: 7px; }
-  .card .rank { font-size: clamp(16px, 4.5vw, 20px); }
-  .card .suit { font-size: clamp(16px, 4.5vw, 20px); }
+  .hand { min-height: 92px; margin-inline: -6px; padding: 4px 6px 2px; gap: 2px; }
+  .hand > .card { height: clamp(76px, 22vw, 92px); padding: 5px 3px; }
+  .hand > .card .rank { font-size: clamp(13px, 3.8vw, 18px); }
+  .hand > .card .suit { font-size: clamp(13px, 3.8vw, 18px); }
   .card.selected { transform: translateY(-10px); }
   .action-bar { align-items: stretch; flex-direction: column; gap: 4px; margin-top: 4px; }
   .action-bar p { text-align: center; }
