@@ -154,8 +154,8 @@ function restoreGame() {
       allAround: Boolean(storedGame.allAround),
       completedAt: storedGame.completedAt || undefined,
     };
-    if (!Number.isInteger(game.roundStartCardCount) || game.roundStartCardCount <= 0) {
-      game.roundStartCardCount = totalCardsRemaining();
+    if (!Number.isInteger(game.trickStartCardCount) || game.trickStartCardCount <= 0) {
+      game.trickStartCardCount = totalCardsRemaining();
     }
     const humanCardIds = new Set(game.hands[0].map((card) => card.id));
     selected = new Set((saved.selected || []).filter((id) => humanCardIds.has(id)));
@@ -182,7 +182,7 @@ function newGame(playerCount = Number(elements.nextPlayerCount?.value || 4)) {
     id: crypto.randomUUID(), startedAt: new Date().toISOString(),
     startingHands: hands.map((hand) => hand.map(cardForRecord)), history: [], trickNumber: 1, recorded: false,
   };
-  game.roundStartCardCount = totalCardsRemaining();
+  game.trickStartCardCount = totalCardsRemaining();
   selected = new Set();
   if (openingPlayer === 0) selected.add('0-0');
   game.aroundRank = null;
@@ -345,10 +345,10 @@ function render() {
 function updateRoundBadgeColor() {
   const badge = document.querySelector('#round-badge');
   if (!badge) return;
-  const startCount = game.roundStartCardCount || totalCardsRemaining() || 1;
+  const startCount = game.trickStartCardCount || totalCardsRemaining() || 1;
   const remaining = totalCardsRemaining();
   const ratio = Math.max(0, Math.min(1, remaining / startCount));
-  // Green (ratio 1, round just started) fades through yellow to red (ratio 0, few cards left to play).
+  // Green (ratio 1, trick just started) fades through yellow to red (ratio 0, few cards left to play).
   const hue = Math.round(ratio * 120);
   badge.style.setProperty('--round-badge-hue', hue);
 }
@@ -493,7 +493,7 @@ function advanceTurn() {
     game.valueInPlay = -1;
     game.passed.clear();
     game.trickNumber = (game.trickNumber || 1) + 1;
-    game.roundStartCardCount = totalCardsRemaining();
+    game.trickStartCardCount = totalCardsRemaining();
     game.current = isFinished(leader) ? nextActive(leader) : leader;
     game.activity = `Round ${game.trickNumber} begins — ${game.current === 0 ? 'you lead' : `${players[game.current]} leads`}.`;
     showToast(game.activity);
