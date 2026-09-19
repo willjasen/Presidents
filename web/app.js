@@ -47,15 +47,20 @@ let syncRetryTimer;
 let syncInFlight = false;
 let pendingGameSync;
 let soundOn = true;
-let themeMode = localStorage.getItem('presidents_theme') || 'light';
+const systemTheme = window.matchMedia('(prefers-color-scheme: dark)');
+const savedTheme = localStorage.getItem('presidents_theme');
+const hasManualTheme = localStorage.getItem('presidents_theme_manual') === 'true';
+let themePreference = hasManualTheme && ['dark', 'light'].includes(savedTheme) ? savedTheme : 'system';
+let themeMode = themePreference === 'system' && systemTheme.matches ? 'dark' : themePreference;
 let sessionToken = localStorage.getItem('presidents_session');
 let profile = null;
 let pendingLoginOptions;
 let loginOptionsReady = false;
 let specialTurnTimer = null;
 
-function applyTheme(theme = themeMode) {
-  themeMode = theme === 'dark' ? 'dark' : 'light';
+function applyTheme(theme = themePreference) {
+  themePreference = ['dark', 'light', 'system'].includes(theme) ? theme : 'system';
+  themeMode = themePreference === 'system' ? (systemTheme.matches ? 'dark' : 'light') : themePreference;
   document.body.dataset.theme = themeMode;
   if (elements.themeButton) {
     const isDark = themeMode === 'dark';
@@ -64,8 +69,18 @@ function applyTheme(theme = themeMode) {
     elements.themeButton.innerHTML = `<span aria-hidden="true">${isDark ? '☾' : '☀'}</span>`;
   }
   document.querySelector('meta[name="theme-color"]')?.setAttribute('content', themeMode === 'dark' ? '#082e25' : '#edf6f2');
-  localStorage.setItem('presidents_theme', themeMode);
+  if (themePreference === 'system') {
+    localStorage.removeItem('presidents_theme');
+    localStorage.removeItem('presidents_theme_manual');
+  } else {
+    localStorage.setItem('presidents_theme', themePreference);
+    localStorage.setItem('presidents_theme_manual', 'true');
+  }
 }
+
+systemTheme.addEventListener('change', () => {
+  if (themePreference === 'system') applyTheme();
+});
 
 function humanPlayerName() {
   return profile?.username || 'You';
