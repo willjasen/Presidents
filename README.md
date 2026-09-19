@@ -14,6 +14,8 @@ uses `netlify.toml` to build the app and its account function.
 
 1. Create the Netlify project from this repository. Netlify will run
    `npm run build`, publish `dist/`, and deploy `netlify/functions/`.
+   Changes confined to `java/` are ignored by the Netlify build, so Java-only
+   updates do not trigger a browser-site redeploy.
 2. In the Netlify project's environment variables, add `DATABASE_URL` with the
    Neon pooled connection string. Mark it as a secret and make it available to
    Functions. Do not commit the real value.
