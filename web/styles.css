@@ -67,6 +67,36 @@ button { color: inherit; }
   transform: rotate(-4deg);
 }
 
+.github-link {
+  position: fixed;
+  right: 18px;
+  bottom: 18px;
+  z-index: 30;
+  width: 38px;
+  height: 38px;
+  display: grid;
+  place-items: center;
+  border: 1px solid rgba(255, 255, 255, 0.12);
+  border-radius: 50%;
+  background: rgba(7, 29, 25, 0.9);
+  box-shadow: 0 10px 24px rgba(0, 0, 0, 0.18);
+  color: #f3f9ff;
+  transition: transform 0.2s ease, border-color 0.2s ease, background 0.2s ease;
+}
+
+.github-link:hover,
+.github-link:focus-visible {
+  transform: translateY(-1px);
+  border-color: rgba(232, 198, 106, 0.45);
+  background: rgba(11, 40, 34, 0.96);
+}
+
+.github-link svg {
+  width: 20px;
+  height: 20px;
+  fill: currentColor;
+}
+
 .topbar-actions { display: flex; align-items: center; gap: 12px; }
 .text-button, .icon-button, .new-game, .dialog-close {
   border: 0;
