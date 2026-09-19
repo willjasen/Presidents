@@ -475,21 +475,22 @@ dialog::backdrop { background: rgba(1, 12, 9, .78); backdrop-filter: blur(4px); 
   }
   .pile { min-height: 118px; }
   .you-badge { bottom: 4px; }
-  .hand-panel { min-height: 0; padding: 10px 14px 8px; overflow: hidden; }
-  .hand-heading { align-items: flex-start; flex-direction: column; gap: 6px; margin-bottom: 6px; }
-  h1 { max-width: 12ch; font-size: clamp(26px, 8vw, 34px); line-height: 1.05; }
+  .hand-panel { min-height: 0; padding: 8px 12px 6px; overflow: hidden; }
+  .hand-heading { align-items: flex-start; flex-direction: column; gap: 2px; margin-bottom: 3px; }
+  .eyebrow { margin-bottom: 2px; }
+  h1 { max-width: 12ch; font-size: clamp(23px, 7vw, 29px); line-height: 1; }
   .game-settings { width: 100%; justify-content: flex-start; }
   .game-settings select { height: 40px; }
   .new-game { padding: 10px 2px; }
-  .hand { justify-content: flex-start; min-height: 106px; margin-inline: -6px; padding: 6px 6px 4px; }
-  .card { flex-basis: clamp(58px, 17vw, 72px); height: clamp(84px, 24vw, 100px); padding: 8px; }
-  .card .rank { font-size: clamp(17px, 5vw, 22px); }
-  .card .suit { font-size: clamp(17px, 5vw, 22px); }
+  .hand { justify-content: flex-start; min-height: 92px; margin-inline: -6px; padding: 4px 6px 2px; }
+  .card { flex-basis: clamp(56px, 16vw, 68px); height: clamp(76px, 22vw, 92px); padding: 7px; }
+  .card .rank { font-size: clamp(16px, 4.5vw, 20px); }
+  .card .suit { font-size: clamp(16px, 4.5vw, 20px); }
   .card.selected { transform: translateY(-10px); }
-  .action-bar { align-items: stretch; flex-direction: column; gap: 6px; margin-top: 6px; }
+  .action-bar { align-items: stretch; flex-direction: column; gap: 4px; margin-top: 4px; }
   .action-bar p { text-align: center; }
   .game-actions { display: grid; grid-template-columns: 1fr 1fr; }
-  .game-actions button { min-width: 0; min-height: 38px; padding-inline: 12px; }
+  .game-actions button { min-width: 0; min-height: 34px; padding-inline: 12px; }
   .play-button { grid-column: 1 / -1; }
 }
 
