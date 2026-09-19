@@ -170,7 +170,7 @@ button { color: inherit; }
 
 .opponent, .you-badge {
   position: absolute;
-  z-index: 2;
+  z-index: 4;
   display: flex;
   flex-direction: column;
   align-items: center;
@@ -474,7 +474,7 @@ dialog::backdrop { background: rgba(1, 12, 9, .78); backdrop-filter: blur(4px); 
     position: absolute;
     left: 50%;
     bottom: 100px;
-    z-index: 3;
+    z-index: 2;
     width: calc(100% - 32px);
     display: grid;
     justify-items: center;
@@ -484,12 +484,26 @@ dialog::backdrop { background: rgba(1, 12, 9, .78); backdrop-filter: blur(4px); 
   .play-area {
     position: static;
     transform: none;
+    width: 100%;
+    max-width: 430px;
   }
   .turn-banner {
     position: static;
     transform: none;
   }
-  .pile { min-height: 118px; }
+  .pile {
+    width: 100%;
+    min-width: 0;
+    min-height: 118px;
+    position: relative;
+  }
+  .pile .card {
+    flex: 0 0 clamp(44px, 13vw, 58px);
+    width: clamp(44px, 13vw, 58px);
+    height: clamp(66px, 19vw, 88px);
+    margin-left: clamp(-28px, -7vw, -18px);
+    padding: 5px;
+  }
   .you-badge { bottom: 4px; }
   .hand-panel { min-height: 0; padding: 8px 12px 6px; overflow: hidden; }
   .hand-heading { align-items: flex-start; flex-direction: column; gap: 2px; margin-bottom: 3px; }
