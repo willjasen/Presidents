@@ -441,12 +441,12 @@ dialog::backdrop { background: rgba(1, 12, 9, .78); backdrop-filter: blur(4px); 
   .round-badge { top: 10px; right: 10px; padding: 4px 8px; font-size: 10px; letter-spacing: .05em; }
   .turn-banner {
     top: auto;
-    bottom: 148px;
+    bottom: 188px;
     width: max-content;
     max-width: calc(100% - 32px);
   }
   .turn-banner.new-round {
-    bottom: 148px;
+    bottom: 188px;
     max-width: calc(100% - 32px);
     padding: 10px 16px;
     font-size: 12px;
@@ -476,7 +476,8 @@ dialog::backdrop { background: rgba(1, 12, 9, .78); backdrop-filter: blur(4px); 
 
 @media (max-width: 420px) {
   .play-area { top: 56%; transform: translate(-50%, -35%); }
-  .turn-banner.new-round { bottom: 158px; }
+  .turn-banner { bottom: 188px; }
+  .turn-banner.new-round { bottom: 188px; }
   .round-start-pile { width: 104px; height: 124px; }
   .round-start-pile strong { font-size: 16px; }
   .last-play { max-width: calc(100vw - 64px); font-size: 16px; }
