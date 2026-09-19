@@ -5,6 +5,7 @@ const SUITS = [
   { symbol: '♦', key: 'diamonds', red: true },
 ];
 const RANKS = ['3', '4', '5', '6', '7', '8', '9', '10', 'J', 'Q', 'K', 'A', '2'];
+const TOTAL_CARDS = RANKS.length * SUITS.length;
 const PLAYER_NAMES = ['You', 'Jordan', 'Maya', 'Sam', 'Avery', 'Riley', 'Quinn'];
 const BOT_COLORS = ['#49b7ff', '#ff7ac6', '#7adf8d', '#ffbf69', '#b593ff', '#5ad9c8'];
 const GAME_STORAGE_KEY = 'presidents_saved_game_v1';
@@ -93,6 +94,10 @@ function createDeck() {
   return RANKS.flatMap((rank, value) => SUITS.map((suit, suitIndex) => ({
     id: `${value}-${suitIndex}`, value, rank, suit: suit.symbol, suitKey: suit.key, red: suit.red,
   })));
+}
+
+function totalCardsRemaining() {
+  return game.hands.reduce((sum, hand) => sum + hand.length, 0);
 }
 
 function shuffle(cards) {
@@ -311,6 +316,7 @@ function render() {
   }
 
   document.querySelector('#round-badge').textContent = `Round ${roundNumber}`;
+  updateRoundBadgeColor();
 
   elements.turnBanner.classList.toggle('new-round', roundStart);
   elements.turnBanner.classList.toggle('all-around', Boolean(game.allAround));
@@ -332,6 +338,15 @@ function render() {
   elements.passButton.disabled = !humanTurn || humanPassed || game.cardsInPlay === 0;
   elements.playButton.innerHTML = `${selected.size === 1 ? 'Play card' : `Play ${selected.size || ''} cards`.trim()} <span aria-hidden="true">→</span>`;
   elements.selectionHint.textContent = selectionMessage(validation, humanTurn);
+}
+
+function updateRoundBadgeColor() {
+  const badge = document.querySelector('#round-badge');
+  if (!badge) return;
+  const remainingRatio = totalCardsRemaining() / TOTAL_CARDS;
+  // More cards remaining in the full deck is green; fewer is yellow/red.
+  const hue = Math.round(remainingRatio * 120);
+  badge.style.setProperty('--round-badge-hue', hue);
 }
 
 function countLabel(count) { return `${count} ${count === 1 ? 'card' : 'cards'}`; }
