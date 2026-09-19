@@ -12,6 +12,6 @@ When a user asks to run the app locally, prefer the guest-mode static local depl
 
 ## Project context
 
-- This repo contains a browser game in `web/`, plus Java desktop/server code under `PresidentsClient`, `PresidentsServer`, and `PresidentsPlayer`.
+- This repo contains a browser game in `web/`, plus the original Java desktop/server project under `java/`.
 - Browser app setup is handled by the Node build and local dev server scripts.
 - Passkey account functionality depends on Neon/Postgres configuration and is optional for local gameplay.

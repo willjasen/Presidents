@@ -47,10 +47,13 @@ starting point for periodic analysis of finish position, pass rate, average
 cards per play, and average rank played. Starting hands and the full ordered
 action history remain available for deeper analysis.
 
+## Java desktop app
+
 Presidents is a restored Java desktop implementation of the climbing card game
 also commonly known as Asshole. The original 2009 project contains a Swing
 client, a socket server, account registration, rooms, and chat. This restoration
 provides a Java 21 build, an embedded account database, and a tested rules engine.
+The original Java project is kept under `java/`, separate from the browser app.
 
 ## Current status
 
@@ -87,15 +90,16 @@ Install the required tools with [Homebrew](https://brew.sh):
 brew install openjdk@21 maven
 ```
 
-The included `.command` launchers find the Homebrew JDK automatically, on both
-Apple Silicon and Intel Macs. In Finder, double-click `run-server.command`, then
-double-click `run-client.command`. Open another client launcher for each local
-player.
+The included `java/*.command` launchers find the Homebrew JDK automatically, on
+both Apple Silicon and Intel Macs. In Finder, open the `java` folder, then
+double-click `run-server.command` followed by `run-client.command`. Open another
+client launcher for each local player.
 
 If macOS refuses to open a launcher the first time, Control-click it, choose
 **Open**, and confirm. The files may also be launched from Terminal:
 
 ```sh
+cd java
 ./run-server.command
 ./run-client.command
 ```
@@ -103,6 +107,7 @@ If macOS refuses to open a launcher the first time, Control-click it, choose
 ## Build and test
 
 ```sh
+cd java
 mvn test
 ```
 
@@ -111,12 +116,14 @@ mvn test
 Start the server first:
 
 ```sh
+cd java
 mvn -DskipTests compile exec:java -Dexec.mainClass=PresidentsServer.Presidents
 ```
 
 Then start each client in a separate terminal:
 
 ```sh
+cd java
 mvn -DskipTests compile exec:java -Dexec.mainClass=PresidentsClient.Client
 ```
 
@@ -130,11 +137,11 @@ exposed directly to the public internet.
 
 ## Architecture
 
-- `PresidentsPlayer` contains cards, hands, players, and the restored game rules.
-- `PresidentsData` contains serializable messages exchanged by client and server.
-- `PresidentsServer` contains accounts, rooms, chat, and socket handling.
-- `PresidentsClient` contains the Swing desktop interface and card artwork.
-- `src/test/java` contains repeatable domain tests.
+- `java/PresidentsPlayer` contains cards, hands, players, and the restored game rules.
+- `java/PresidentsData` contains serializable messages exchanged by client and server.
+- `java/PresidentsServer` contains accounts, rooms, chat, and socket handling.
+- `java/PresidentsClient` contains the Swing desktop interface and card artwork.
+- `java/src/test/java` contains repeatable domain tests.
 
 ## Remaining roadmap
 
