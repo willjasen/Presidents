@@ -28,6 +28,7 @@ const elements = {
   authDialog: document.querySelector('#auth-dialog'),
   accountButton: document.querySelector('#account-button'),
   accountLabel: document.querySelector('#account-label'),
+  themeButton: document.querySelector('#theme-button'),
   authSignedOut: document.querySelector('#auth-signed-out'),
   authSignedIn: document.querySelector('#auth-signed-in'),
   authNote: document.querySelector('#auth-note'),
@@ -46,11 +47,25 @@ let syncRetryTimer;
 let syncInFlight = false;
 let pendingGameSync;
 let soundOn = true;
+let themeMode = localStorage.getItem('presidents_theme') || 'light';
 let sessionToken = localStorage.getItem('presidents_session');
 let profile = null;
 let pendingLoginOptions;
 let loginOptionsReady = false;
 let specialTurnTimer = null;
+
+function applyTheme(theme = themeMode) {
+  themeMode = theme === 'dark' ? 'dark' : 'light';
+  document.body.dataset.theme = themeMode;
+  if (elements.themeButton) {
+    const isDark = themeMode === 'dark';
+    elements.themeButton.setAttribute('aria-label', isDark ? 'Switch to light mode' : 'Switch to dark mode');
+    elements.themeButton.title = isDark ? 'Light mode' : 'Dark mode';
+    elements.themeButton.innerHTML = `<span aria-hidden="true">${isDark ? '☾' : '☀'}</span>`;
+  }
+  document.querySelector('meta[name="theme-color"]')?.setAttribute('content', themeMode === 'dark' ? '#082e25' : '#edf6f2');
+  localStorage.setItem('presidents_theme', themeMode);
+}
 
 function humanPlayerName() {
   return profile?.username || 'You';
@@ -572,6 +587,12 @@ document.querySelector('#start-next-game').addEventListener('click', () => { ele
 document.querySelector('#rules-button').addEventListener('click', () => elements.rulesDialog.showModal());
 document.querySelector('#rules-close').addEventListener('click', () => elements.rulesDialog.close());
 document.querySelector('#rules-done').addEventListener('click', () => elements.rulesDialog.close());
+elements.themeButton.addEventListener('click', () => {
+  const nextTheme = themeMode === 'light' ? 'dark' : 'light';
+  applyTheme(nextTheme);
+  showToast(nextTheme === 'dark' ? 'Dark mode enabled' : 'Light mode enabled');
+});
+
 document.querySelector('#sound-button').addEventListener('click', (event) => {
   soundOn = !soundOn;
   event.currentTarget.setAttribute('aria-label', `Turn sound ${soundOn ? 'off' : 'on'}`);
@@ -728,5 +749,6 @@ function renderLeaderboard(players) {
       </div>`).join('')}`;
 }
 
+applyTheme();
 if (!restoreGame()) newGame();
 loadProfile();
