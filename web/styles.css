@@ -211,6 +211,16 @@ button { color: inherit; }
 .opponent[data-side="top"] { gap: 4px; }
 .opponent[data-side="top"] .player-copy { justify-items: center; }
 .opponent.active .avatar { border-color: var(--gold); box-shadow: 0 0 0 4px rgba(232,198,106,.12), 0 8px 20px rgba(0,0,0,.18); }
+.opponent.passed,
+.you-badge.passed { opacity: .48; filter: grayscale(.7); }
+.opponent.passed .avatar,
+.you-badge.passed .avatar { box-shadow: none; }
+.opponent.passed .player-copy > .card-count,
+.you-badge.passed .player-copy > .card-count {
+  border-color: rgba(255,255,255,.2);
+  background: rgba(5, 37, 29, .5);
+  color: var(--muted);
+}
 
 .turn-banner {
   position: absolute; top: calc(50% + 100px); left: 50%; transform: translateX(-50%); z-index: 3;
@@ -339,6 +349,7 @@ h2 { margin: 0; font-size: 28px; }
 .hand > .card:first-child { margin-left: 0; }
 .card:first-child { margin-left: 0; }
 .card:hover { transform: translateY(-7px); box-shadow: 0 12px 20px rgba(0,0,0,.32); }
+.card.passed { filter: grayscale(.85); }
 .card.selected { transform: translateY(-16px); box-shadow: 0 0 0 3px var(--gold), 0 17px 25px rgba(0,0,0,.35); }
 .card.red { color: var(--red); }
 .card .rank { font: 700 clamp(18px, 2.4vw, 27px)/1 'DM Sans', sans-serif; }

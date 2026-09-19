@@ -201,12 +201,12 @@ function endGame() {
   elements.endGameDialog.showModal();
 }
 
-function cardMarkup(card, { button = false, selectedCard = false, index = 0 } = {}) {
+function cardMarkup(card, { button = false, selectedCard = false, disabled = false, index = 0 } = {}) {
   const tag = button ? 'button' : 'div';
   const attrs = button
-    ? `type="button" data-card-id="${card.id}" aria-label="${card.rank} of ${card.suitKey}" aria-pressed="${selectedCard}"`
+    ? `type="button" data-card-id="${card.id}" aria-label="${card.rank} of ${card.suitKey}" aria-pressed="${selectedCard}"${disabled ? ' disabled' : ''}`
     : `aria-label="${card.rank} of ${card.suitKey}" style="--angle:${(index - 1.5) * 4}deg"`;
-  return `<${tag} class="card ${card.red ? 'red' : 'black'} ${selectedCard ? 'selected' : ''}" ${attrs}><span class="rank">${card.rank}</span><span class="suit">${card.suit}</span></${tag}>`;
+  return `<${tag} class="card ${card.red ? 'red' : 'black'} ${selectedCard ? 'selected' : ''} ${disabled ? 'passed' : ''}" ${attrs}><span class="rank">${card.rank}</span><span class="suit">${card.suit}</span></${tag}>`;
 }
 
 function playedCardPictures(cards) {
@@ -262,14 +262,16 @@ function renderOpponents() {
 
 function render() {
   const humanTurn = game.status === 'playing' && game.current === 0;
+  const humanPassed = game.status === 'playing' && game.passed.has(0);
   const roundNumber = game.trickNumber || 1;
   const roundStart = game.status === 'playing' && game.cardsInPlay === 0;
   elements.hand.innerHTML = game.hands[0].map((card) => cardMarkup(card, {
-    button: true, selectedCard: selected.has(card.id),
+    button: true, selectedCard: selected.has(card.id), disabled: humanPassed,
   })).join('');
   document.querySelector('.avatar-you').textContent = humanPlayerName()[0].toUpperCase();
   document.querySelector('.you-badge .player-copy strong').textContent = humanPlayerName();
-  elements.yourCount.textContent = countLabel(game.hands[0].length);
+  elements.yourCount.textContent = humanPassed ? `Passed · ${countLabel(game.hands[0].length)}` : countLabel(game.hands[0].length);
+  document.querySelector('.you-badge').classList.toggle('passed', humanPassed);
 
   renderOpponents();
   document.querySelectorAll('.opponent').forEach((opponent) => {
@@ -282,8 +284,9 @@ function render() {
       : game.passed.has(index) ? `Passed · ${cardCount}` : cardCount;
     opponent.querySelector('.player-copy').classList.toggle('has-mini-play', Boolean(lastPlay));
     opponent.querySelector('.player-copy').innerHTML = `<strong>${players[index]}</strong><span class="card-count">${finishedAt >= 0 ? placeName(finishedAt + 1) : game.passed.has(index) ? `Passed · ${cardCount}` : cardCount}</span>${lastPlay ? `<span class="mini-play-stack">${game.lastCards.map((card) => miniCardMarkup(card)).join('')}</span>` : ''}`;
-    opponent.setAttribute('aria-label', `${players[index]}: ${finishedAt >= 0 ? placeName(finishedAt + 1) : cardCount}`);
+    opponent.setAttribute('aria-label', `${players[index]}: ${finishedAt >= 0 ? placeName(finishedAt + 1) : game.passed.has(index) ? `Passed, ${cardCount}` : cardCount}`);
     opponent.classList.toggle('active', game.current === index && game.status === 'playing');
+    opponent.classList.toggle('passed', game.status === 'playing' && game.passed.has(index));
   });
 
   elements.pile.classList.remove('is-two-clear');
@@ -321,7 +324,7 @@ function render() {
 
   const validation = validateSelection();
   elements.playButton.disabled = !humanTurn || !validation.valid;
-  elements.passButton.disabled = !humanTurn || game.cardsInPlay === 0;
+  elements.passButton.disabled = !humanTurn || humanPassed || game.cardsInPlay === 0;
   elements.playButton.innerHTML = `${selected.size === 1 ? 'Play card' : `Play ${selected.size || ''} cards`.trim()} <span aria-hidden="true">→</span>`;
   elements.selectionHint.textContent = selectionMessage(validation, humanTurn);
 }
@@ -349,6 +352,7 @@ function validateCards(cards) {
 function validateSelection() { return validateCards(selectedCards()); }
 function selectionMessage(validation, humanTurn) {
   if (game.status === 'finished') return 'Start a new game to play again.';
+  if (game.passed.has(0)) return 'You passed and sit out until the trick clears.';
   if (!humanTurn) return `Waiting for ${players[game.current]}`;
   return validation.message;
 }
@@ -370,7 +374,7 @@ function allAroundAnnouncement(cards) {
 }
 
 function playCards(playerIndex, cards) {
-  if (game.status !== 'playing' || playerIndex !== game.current) return;
+  if (game.status !== 'playing' || playerIndex !== game.current || game.passed.has(playerIndex)) return;
   const validation = validateCards(cards);
   if (!validation.valid) return showToast(validation.message);
   const pileCountBefore = game.cardsInPlay;
@@ -567,7 +571,7 @@ function showToast(message) {
 
 elements.hand.addEventListener('click', (event) => {
   const button = event.target.closest('[data-card-id]');
-  if (!button || game.current !== 0 || game.status !== 'playing') return;
+  if (!button || game.current !== 0 || game.status !== 'playing' || game.passed.has(0)) return;
   const id = button.dataset.cardId;
   if (selected.has(id)) {
     selected.delete(id);
