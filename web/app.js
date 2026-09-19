@@ -95,6 +95,10 @@ function createDeck() {
   })));
 }
 
+function totalCardsRemaining() {
+  return game.hands.reduce((sum, hand) => sum + hand.length, 0);
+}
+
 function shuffle(cards) {
   const result = [...cards];
   for (let i = result.length - 1; i > 0; i -= 1) {
@@ -150,6 +154,9 @@ function restoreGame() {
       allAround: Boolean(storedGame.allAround),
       completedAt: storedGame.completedAt || undefined,
     };
+    if (!Number.isInteger(game.roundStartCardCount) || game.roundStartCardCount <= 0) {
+      game.roundStartCardCount = totalCardsRemaining();
+    }
     const humanCardIds = new Set(game.hands[0].map((card) => card.id));
     selected = new Set((saved.selected || []).filter((id) => humanCardIds.has(id)));
     render();
@@ -175,6 +182,7 @@ function newGame(playerCount = Number(elements.nextPlayerCount?.value || 4)) {
     id: crypto.randomUUID(), startedAt: new Date().toISOString(),
     startingHands: hands.map((hand) => hand.map(cardForRecord)), history: [], trickNumber: 1, recorded: false,
   };
+  game.roundStartCardCount = totalCardsRemaining();
   selected = new Set();
   if (openingPlayer === 0) selected.add('0-0');
   game.aroundRank = null;
@@ -310,6 +318,7 @@ function render() {
   }
 
   document.querySelector('#round-badge').textContent = `Round ${roundNumber}`;
+  updateRoundBadgeColor();
 
   elements.turnBanner.classList.toggle('new-round', roundStart);
   elements.turnBanner.classList.toggle('all-around', Boolean(game.allAround));
@@ -331,6 +340,17 @@ function render() {
   elements.passButton.disabled = !humanTurn || humanPassed || game.cardsInPlay === 0;
   elements.playButton.innerHTML = `${selected.size === 1 ? 'Play card' : `Play ${selected.size || ''} cards`.trim()} <span aria-hidden="true">→</span>`;
   elements.selectionHint.textContent = selectionMessage(validation, humanTurn);
+}
+
+function updateRoundBadgeColor() {
+  const badge = document.querySelector('#round-badge');
+  if (!badge) return;
+  const startCount = game.roundStartCardCount || totalCardsRemaining() || 1;
+  const remaining = totalCardsRemaining();
+  const ratio = Math.max(0, Math.min(1, remaining / startCount));
+  // Green (ratio 1, round just started) fades through yellow to red (ratio 0, few cards left to play).
+  const hue = Math.round(ratio * 120);
+  badge.style.setProperty('--round-badge-hue', hue);
 }
 
 function countLabel(count) { return `${count} ${count === 1 ? 'card' : 'cards'}`; }
@@ -473,6 +493,7 @@ function advanceTurn() {
     game.valueInPlay = -1;
     game.passed.clear();
     game.trickNumber = (game.trickNumber || 1) + 1;
+    game.roundStartCardCount = totalCardsRemaining();
     game.current = isFinished(leader) ? nextActive(leader) : leader;
     game.activity = `Round ${game.trickNumber} begins — ${game.current === 0 ? 'you lead' : `${players[game.current]} leads`}.`;
     showToast(game.activity);
