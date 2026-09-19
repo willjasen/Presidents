@@ -7,7 +7,7 @@
     <meta name="description" content="Play scummie, the classic climbing card game." />
     <link rel="icon" href="favicon.svg" type="image/svg+xml" />
     <title>scummie — The Card Game</title>
-    <link rel="stylesheet" href="styles.css?v=18" />
+    <link rel="stylesheet" href="styles.css?v=19" />
   </head>
   <body>
     <div class="app-shell">
@@ -46,13 +46,14 @@
 
           <div id="opponents" aria-label="Computer opponents"></div>
 
-          <div class="turn-banner" id="turn-banner" role="status">Your turn</div>
-
-          <div class="play-area">
-            <div class="pile" id="pile" aria-label="Cards in play">
-              <div class="empty-pile"><span>♣</span><small>New trick</small></div>
+          <div class="table-status">
+            <div class="play-area">
+              <div class="pile" id="pile" aria-label="Cards in play">
+                <div class="empty-pile"><span>♣</span><small>New trick</small></div>
+              </div>
+              <div class="last-play" id="last-play">You have the 3 of clubs — lead the first trick.</div>
             </div>
-            <div class="last-play" id="last-play">You have the 3 of clubs — lead the first trick.</div>
+            <div class="turn-banner" id="turn-banner" role="status">Your turn</div>
           </div>
 
           <div class="you-badge">

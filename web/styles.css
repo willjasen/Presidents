@@ -173,6 +173,7 @@ button { color: inherit; }
   align-items: center;
   gap: 8px;
 }
+.table-status { display: contents; }
 .opponent {
   left: var(--seat-x); top: var(--seat-y); transform: translate(-50%, -50%);
 }
@@ -440,20 +441,38 @@ dialog::backdrop { background: rgba(1, 12, 9, .78); backdrop-filter: blur(4px); 
   .opponent[data-side="top"] { top: calc(var(--seat-y) - 4%); }
   .round-badge { top: 10px; right: 10px; padding: 4px 8px; font-size: 10px; letter-spacing: .05em; }
   .turn-banner {
-    top: 34%;
+    top: auto;
     bottom: auto;
     width: max-content;
     max-width: calc(100% - 32px);
   }
   .turn-banner.new-round {
-    top: 34%;
+    top: auto;
     max-width: calc(100% - 32px);
     padding: 10px 16px;
     font-size: 12px;
     letter-spacing: .06em;
     white-space: nowrap;
   }
-  .play-area { top: 56%; transform: translate(-50%, -35%); }
+  .table-status {
+    position: absolute;
+    left: 50%;
+    bottom: 100px;
+    z-index: 3;
+    width: calc(100% - 32px);
+    display: grid;
+    justify-items: center;
+    gap: 8px;
+    transform: translateX(-50%);
+  }
+  .play-area {
+    position: static;
+    transform: none;
+  }
+  .turn-banner {
+    position: static;
+    transform: none;
+  }
   .pile { min-height: 118px; }
   .you-badge { bottom: 4px; }
   .hand-panel { min-height: 0; padding: 10px 14px 8px; overflow: hidden; }
@@ -475,9 +494,7 @@ dialog::backdrop { background: rgba(1, 12, 9, .78); backdrop-filter: blur(4px); 
 }
 
 @media (max-width: 420px) {
-  .play-area { top: 56%; transform: translate(-50%, -35%); }
-  .turn-banner { top: 34%; }
-  .turn-banner.new-round { top: 34%; }
+  .table-status { bottom: 100px; }
   .round-start-pile { width: 104px; height: 124px; }
   .round-start-pile strong { font-size: 16px; }
   .last-play { max-width: calc(100vw - 64px); font-size: 16px; }
