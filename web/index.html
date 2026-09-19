@@ -12,10 +12,17 @@
   <body>
     <div class="app-shell">
       <header class="topbar">
-        <a class="brand" href="#" aria-label="scummie home">
-          <span class="brand-mark" aria-hidden="true">S</span>
-          <span>scummie</span>
-        </a>
+        <div class="brand-group">
+          <a class="brand" href="#" aria-label="scummie home">
+            <span class="brand-mark" aria-hidden="true">S</span>
+            <span>scummie</span>
+          </a>
+          <a class="github-link" href="https://github.com/willjasen/Presidents" target="_blank" rel="noreferrer" aria-label="View the GitHub repository">
+            <svg viewBox="0 0 24 24" aria-hidden="true" focusable="false">
+              <path d="M12 .5a12 12 0 0 0-3.79 23.39c.6.11.82-.26.82-.58v-2.03c-3.34.73-4.04-1.6-4.04-1.6-.55-1.39-1.34-1.76-1.34-1.76-1.09-.75.08-.74.08-.74 1.2.09 1.83 1.23 1.83 1.23 1.07 1.84 2.81 1.31 3.49 1 .11-.8.42-1.31.76-1.61-2.66-.3-5.46-1.33-5.46-5.92 0-1.31.47-2.38 1.24-3.22-.12-.3-.54-1.52.12-3.17 0 0 1-.32 3.3 1.23a11.4 11.4 0 0 1 6 0c2.3-1.55 3.3-1.23 3.3-1.23.66 1.65.24 2.87.12 3.17.77.84 1.24 1.91 1.24 3.22 0 4.6-2.8 5.61-5.48 5.91.43.37.82 1.1.82 2.22v3.29c0 .32.21.7.83.58A12 12 0 0 0 12 .5Z"/>
+            </svg>
+          </a>
+        </div>
         <div class="topbar-actions">
           <button class="text-button" id="rules-button" type="button">How to play</button>
           <button class="text-button leaderboard-button" id="leaderboard-button" type="button" hidden>Leaderboard</button>
@@ -158,11 +165,6 @@
       <button class="play-button dialog-done" id="start-next-game" type="button">Start next game <span aria-hidden="true">→</span></button>
     </dialog>
 
-    <a class="github-link" href="https://github.com/willjasen/Presidents" target="_blank" rel="noreferrer" aria-label="View the GitHub repository">
-      <svg viewBox="0 0 24 24" aria-hidden="true" focusable="false">
-        <path d="M12 .5a12 12 0 0 0-3.79 23.39c.6.11.82-.26.82-.58v-2.03c-3.34.73-4.04-1.6-4.04-1.6-.55-1.39-1.34-1.76-1.34-1.76-1.09-.75.08-.74.08-.74 1.2.09 1.83 1.23 1.83 1.23 1.07 1.84 2.81 1.31 3.49 1 .11-.8.42-1.31.76-1.61-2.66-.3-5.46-1.33-5.46-5.92 0-1.31.47-2.38 1.24-3.22-.12-.3-.54-1.52.12-3.17 0 0 1-.32 3.3 1.23a11.4 11.4 0 0 1 6 0c2.3-1.55 3.3-1.23 3.3-1.23.66 1.65.24 2.87.12 3.17.77.84 1.24 1.91 1.24 3.22 0 4.6-2.8 5.61-5.48 5.91.43.37.82 1.1.82 2.22v3.29c0 .32.21.7.83.58A12 12 0 0 0 12 .5Z"/>
-      </svg>
-    </a>
     <div class="toast" id="toast" role="alert" aria-live="assertive"></div>
     <script src="vendor/simplewebauthn-browser.umd.min.js"></script>
     <script type="module" src="app.js?v=16"></script>
