@@ -8,12 +8,35 @@
   --felt-deep: #062d25;
   --panel: #071d19;
   --panel-soft: #0b2822;
+  --topbar: #061914;
   --line: rgba(255, 255, 255, 0.12);
   --gold: #e8c66a;
   --red: #bd3f45;
   --card: #fffdf7;
   --black-card: #17211e;
+  --panel-alt: #09221d;
+  --button-ink: #dbe5e1;
+  --shadow: rgba(0, 0, 0, 0.18);
   font-family: 'DM Sans', system-ui, sans-serif;
+}
+
+body[data-theme='dark'] {
+  color-scheme: dark;
+  --ink: #eee9df;
+  --muted: #8f9d98;
+  --felt: #17251f;
+  --felt-deep: #0b1210;
+  --panel: #0c1110;
+  --panel-soft: #151d1a;
+  --topbar: #090d0c;
+  --line: rgba(255, 255, 255, 0.12);
+  --gold: #d5ad4e;
+  --red: #c15a60;
+  --card: #fffdf7;
+  --black-card: #17211e;
+  --panel-alt: #111916;
+  --button-ink: #d2dad6;
+  --shadow: rgba(0, 0, 0, 0.18);
 }
 @keyframes all-around-text-pop {
   from { opacity: 0; transform: translateY(-5px); }
@@ -28,6 +51,7 @@ body {
   min-height: 100vh;
   color: var(--ink);
   background: var(--panel);
+  transition: background 0.2s ease, color 0.2s ease;
 }
 
 button, a { font: inherit; }
@@ -41,7 +65,7 @@ button { color: inherit; }
   display: flex;
   align-items: center;
   justify-content: space-between;
-  background: #061914;
+  background: var(--topbar);
   border-bottom: 1px solid var(--line);
 }
 
@@ -106,7 +130,7 @@ button { color: inherit; }
 .account-button {
   min-height: 38px; padding: 0 13px; display: flex; align-items: center; gap: 8px;
   border: 1px solid var(--line); border-radius: 999px; background: rgba(255,255,255,.035);
-  color: #dbe5e1; font-weight: 700; cursor: pointer;
+  color: var(--button-ink); font-weight: 700; cursor: pointer;
 }
 .account-dot { width: 8px; height: 8px; border-radius: 50%; background: var(--gold); box-shadow: 0 0 0 3px rgba(232,198,106,.12); }
 .account-button.signed-in .account-dot { background: #72d7aa; box-shadow: 0 0 0 3px rgba(114,215,170,.12); }
@@ -180,7 +204,7 @@ button { color: inherit; }
 
 .turn-banner {
   position: absolute; top: calc(50% + 100px); left: 50%; transform: translateX(-50%); z-index: 3;
-  padding: 9px 16px; border: 1px solid rgba(232,198,106,.35); border-radius: 999px;
+  padding: 6px 12px; border: 1px solid rgba(232,198,106,.35); border-radius: 999px;
   background: rgba(5, 37, 29, .82); color: var(--gold); font-size: 14px; font-weight: 700;
   letter-spacing: .08em; text-transform: uppercase;
 }
@@ -273,7 +297,7 @@ button { color: inherit; }
 .mini-play-card.black { color: var(--black-card); }
 .mini-play-card .mini-rank, .mini-play-card .mini-suit { font-size: 8px; font-weight: 800; }
 
-.hand-panel { padding: 24px clamp(18px, 5vw, 72px) 30px; background: linear-gradient(180deg, #09221d, #061813); }
+.hand-panel { padding: 24px clamp(18px, 5vw, 72px) 30px; background: linear-gradient(180deg, var(--panel-alt), var(--panel)); }
 .hand-heading { display: flex; align-items: end; justify-content: space-between; gap: 20px; max-width: 1160px; margin: 0 auto 18px; }
 .eyebrow { margin: 0 0 5px; color: var(--gold); font-size: 11px; font-weight: 700; letter-spacing: .12em; }
 h1, h2 { font-family: 'Fraunces', serif; font-weight: 650; letter-spacing: -.02em; }
@@ -335,7 +359,7 @@ button:disabled { opacity: .4; cursor: not-allowed; }
 
 dialog {
   width: min(520px, calc(100% - 32px)); padding: 28px; border: 1px solid rgba(255,255,255,.15);
-  border-radius: 16px; color: var(--ink); background: #0b2822; box-shadow: 0 30px 90px rgba(0,0,0,.6);
+  border-radius: 16px; color: var(--ink); background: var(--panel-soft); box-shadow: 0 30px 90px rgba(0,0,0,.6);
 }
 dialog::backdrop { background: rgba(1, 12, 9, .78); backdrop-filter: blur(4px); }
 .dialog-head { display: flex; justify-content: space-between; gap: 20px; }
@@ -351,10 +375,10 @@ dialog::backdrop { background: rgba(1, 12, 9, .78); backdrop-filter: blur(4px); 
 .field-label { display: block; margin-bottom: 7px; color: #dbe5e1; font-size: 14px; font-weight: 700; }
 .name-input {
   width: 100%; height: 48px; margin-bottom: 10px; padding: 0 14px; border: 1px solid rgba(255,255,255,.18);
-  border-radius: 8px; outline: 0; background: #061b16; color: white; font: inherit;
+  border-radius: 8px; outline: 0; background: var(--topbar); color: var(--ink); font: inherit;
 }
 .name-input:focus { border-color: var(--gold); box-shadow: 0 0 0 3px rgba(232,198,106,.12); }
-.next-player-select { width: 100%; height: 48px; margin-bottom: 18px; padding: 0 12px; border: 1px solid rgba(255,255,255,.18); border-radius: 8px; background: #061b16; color: var(--ink); font: inherit; }
+.next-player-select { width: 100%; height: 48px; margin-bottom: 18px; padding: 0 12px; border: 1px solid rgba(255,255,255,.18); border-radius: 8px; background: var(--topbar); color: var(--ink); font: inherit; }
 .dialog-actions { display: flex; justify-content: flex-end; gap: 10px; }
 .auth-note { min-height: 20px; margin: 14px 0 0; color: var(--muted); font-size: 13px; line-height: 1.5; }
 .auth-note.error { color: #ff9ca1; }
@@ -403,7 +427,12 @@ dialog::backdrop { background: rgba(1, 12, 9, .78); backdrop-filter: blur(4px); 
   .opponent .avatar { width: 34px; height: 34px; font-size: 12px; }
   .opponent[data-side="top"] { top: calc(var(--seat-y) - 4%); }
   .round-badge { top: 10px; right: 10px; padding: 4px 8px; font-size: 10px; letter-spacing: .05em; }
-  .turn-banner { bottom: 148px; }
+  .turn-banner {
+    top: auto;
+    bottom: 148px;
+    width: max-content;
+    max-width: calc(100% - 32px);
+  }
   .turn-banner.new-round {
     bottom: 148px;
     max-width: calc(100% - 32px);
