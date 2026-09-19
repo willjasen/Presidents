@@ -46,7 +46,6 @@ let botTimer;
 let syncRetryTimer;
 let syncInFlight = false;
 let pendingGameSync;
-let soundOn = true;
 const systemTheme = window.matchMedia('(prefers-color-scheme: dark)');
 const savedTheme = localStorage.getItem('presidents_theme');
 const hasManualTheme = localStorage.getItem('presidents_theme_manual') === 'true';
@@ -602,12 +601,6 @@ elements.themeButton.addEventListener('click', () => {
   const nextTheme = themeMode === 'light' ? 'dark' : 'light';
   applyTheme(nextTheme);
   showToast(nextTheme === 'dark' ? 'Dark mode enabled' : 'Light mode enabled');
-});
-
-document.querySelector('#sound-button').addEventListener('click', (event) => {
-  soundOn = !soundOn;
-  event.currentTarget.setAttribute('aria-label', `Turn sound ${soundOn ? 'off' : 'on'}`);
-  event.currentTarget.style.opacity = soundOn ? '1' : '.45';
 });
 
 elements.accountButton.addEventListener('click', () => {
